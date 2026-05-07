@@ -1,0 +1,1266 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nance Business</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --bg: #0a0c10;
+    --bg2: #111318;
+    --bg3: #1a1d24;
+    --border: #2a2d35;
+    --text: #e8eaf0;
+    --text2: #8b8fa8;
+    --accent: #5b5ef4;
+    --accent2: #7c7ff5;
+    --green: #22c97a;
+    --red: #f04f5e;
+    --amber: #f59e0b;
+    --radius: 12px;
+    --font: 'Plus Jakarta Sans', sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* LOGIN */
+  #login-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at 50% 0%, #1a1d6e22 0%, transparent 70%);
+  }
+  .login-box {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 40px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 20px 60px #00000060;
+  }
+  .login-logo {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  .login-logo h1 {
+    font-size: 26px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #5b5ef4, #22c97a);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+  }
+  .login-logo p { color: var(--text2); font-size: 13px; margin-top: 4px; }
+  .form-group { margin-bottom: 16px; }
+  .form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .form-group input {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-group input:focus { border-color: var(--accent); }
+  .btn-primary {
+    width: 100%;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    padding: 13px;
+    font-family: var(--font);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    margin-top: 8px;
+  }
+  .btn-primary:hover { background: var(--accent2); }
+  .btn-primary:active { transform: scale(0.98); }
+  .login-error { color: var(--red); font-size: 13px; text-align: center; margin-top: 10px; display: none; }
+
+  /* MAIN APP */
+  #app { display: none; }
+  .sidebar {
+    position: fixed;
+    left: 0; top: 0; bottom: 0;
+    width: 240px;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    z-index: 100;
+    overflow-y: auto;
+  }
+  .sidebar-header {
+    padding: 20px 16px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-header h1 {
+    font-size: 16px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #5b5ef4, #22c97a);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .sidebar-header p { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  .user-badge {
+    margin: 12px 16px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .user-badge .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    flex-shrink: 0;
+  }
+  .user-badge span { color: var(--text2); }
+  .user-badge strong { color: var(--text); font-size: 11px; }
+
+  .section-label {
+    padding: 16px 16px 6px;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+  }
+  .boutique-item {
+    margin: 2px 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.15s;
+  }
+  .boutique-item:hover { background: var(--bg3); }
+  .boutique-item.active { background: var(--bg3); border: 1px solid var(--border); }
+  .boutique-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .boutique-name { font-size: 13px; font-weight: 500; flex: 1; }
+  .boutique-sub { font-size: 11px; color: var(--text2); }
+  .add-boutique-btn {
+    margin: 4px 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text2);
+    font-size: 13px;
+    transition: background 0.15s, color 0.15s;
+    border: 1px dashed var(--border);
+  }
+  .add-boutique-btn:hover { background: var(--bg3); color: var(--text); }
+
+  .nav-section { margin-top: auto; border-top: 1px solid var(--border); padding: 8px 0; }
+  .nav-item {
+    margin: 2px 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text2);
+    transition: background 0.15s, color 0.15s;
+  }
+  .nav-item:hover { background: var(--bg3); color: var(--text); }
+  .logout-btn { color: var(--red) !important; }
+
+  /* MAIN CONTENT */
+  .main { margin-left: 240px; min-height: 100vh; }
+  .topbar {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .topbar-title { font-size: 16px; font-weight: 700; }
+  .topbar-boutique {
+    font-size: 12px;
+    color: var(--text2);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .tabs {
+    display: flex;
+    gap: 4px;
+    padding: 16px 24px 0;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+    overflow-x: auto;
+  }
+  .tab {
+    padding: 8px 16px;
+    border-radius: 8px 8px 0 0;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text2);
+    white-space: nowrap;
+    transition: color 0.15s;
+    border-bottom: 2px solid transparent;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent2); border-bottom-color: var(--accent); }
+  .content { padding: 24px; }
+
+  /* CARDS */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 16px;
+  }
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .stat-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+  }
+  .stat-label { font-size: 11px; color: var(--text2); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-value { font-size: 22px; font-weight: 800; margin-top: 4px; }
+  .stat-sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  .green { color: var(--green); }
+  .red { color: var(--red); }
+  .amber { color: var(--amber); }
+  .accent { color: var(--accent2); }
+
+  /* TABLE */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 8px 12px; color: var(--text2); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); }
+  td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg3); }
+
+  /* FORMS */
+  .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 12px; }
+  .inp {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 13px;
+    outline: none;
+    width: 100%;
+    transition: border-color 0.2s;
+  }
+  .inp:focus { border-color: var(--accent); }
+  select.inp { cursor: pointer; }
+  .inp-label { font-size: 11px; color: var(--text2); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; display: block; }
+  .btn {
+    padding: 9px 16px;
+    border-radius: 8px;
+    border: none;
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-accent { background: var(--accent); color: #fff; }
+  .btn-accent:hover { opacity: 0.85; }
+  .btn-green { background: #22c97a22; color: var(--green); border: 1px solid #22c97a44; }
+  .btn-red { background: #f04f5e22; color: var(--red); border: 1px solid #f04f5e44; }
+  .btn-amber { background: #f59e0b22; color: var(--amber); border: 1px solid #f59e0b44; }
+  .btn-ghost { background: var(--bg3); color: var(--text2); border: 1px solid var(--border); }
+  .btn-ghost:hover { color: var(--text); }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+  /* BADGE */
+  .badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .badge-green { background: #22c97a22; color: var(--green); }
+  .badge-red { background: #f04f5e22; color: var(--red); }
+  .badge-amber { background: #f59e0b22; color: var(--amber); }
+  .badge-accent { background: #5b5ef422; color: var(--accent2); }
+  .badge-gray { background: var(--bg3); color: var(--text2); }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: #00000080;
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  .modal {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    width: 100%;
+    max-width: 460px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .modal-title { font-size: 16px; font-weight: 700; margin-bottom: 20px; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+
+  /* RECETTE */
+  .recette-line { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .recette-total {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    margin-top: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  /* GLOBAL VIEW */
+  .global-row td:first-child { font-weight: 600; }
+
+  /* EMPTY */
+  .empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--text2);
+  }
+  .empty-state p { font-size: 14px; margin-top: 8px; }
+
+  /* NOTIFICATION */
+  #notif {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    z-index: 999;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.3s;
+    max-width: 300px;
+  }
+  #notif.show { transform: translateY(0); opacity: 1; }
+  #notif.success { border-left: 3px solid var(--green); }
+  #notif.error { border-left: 3px solid var(--red); }
+
+  /* MOBILE */
+  #menu-toggle {
+    display: none;
+    position: fixed;
+    top: 12px; left: 12px;
+    z-index: 300;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    cursor: pointer;
+    font-size: 18px;
+  }
+  @media (max-width: 768px) {
+    .sidebar { transform: translateX(-100%); transition: transform 0.3s; }
+    .sidebar.open { transform: translateX(0); }
+    .main { margin-left: 0; }
+    #menu-toggle { display: block; }
+    .topbar { padding-left: 52px; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .form-row { grid-template-columns: 1fr; }
+    .content { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<button id="menu-toggle" onclick="toggleSidebar()">☰</button>
+<div id="notif"></div>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <h1>Nance Business</h1>
+      <p>Gestion multi-boutiques • République du Congo</p>
+    </div>
+    <div class="form-group">
+      <label>Identifiant</label>
+      <input type="text" id="login-id" placeholder="Ex: pdg" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="form-group">
+      <label>Mot de passe</label>
+      <input type="password" id="login-pw" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="btn-primary" onclick="doLogin()">Se connecter</button>
+    <div class="login-error" id="login-error">Identifiant ou mot de passe incorrect</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <h1>Nance Business</h1>
+      <p>Tableau de bord</p>
+    </div>
+    <div class="user-badge">
+      <div class="dot"></div>
+      <div><strong id="user-label">PDG</strong><br><span id="user-role-label">Accès total</span></div>
+    </div>
+    <div class="section-label">Boutiques</div>
+    <div id="boutiques-list"></div>
+    <div id="add-boutique-wrap"></div>
+    <div class="nav-section">
+      <div id="global-btn" class="nav-item" onclick="showGlobal()" style="display:none">
+        <span>🌍</span> Vue globale
+      </div>
+      <div id="comptes-btn" class="nav-item" onclick="showComptes()" style="display:none">
+        <span>🔑</span> Comptes
+      </div>
+      <div class="nav-item logout-btn" onclick="doLogout()">
+        <span>→</span> Déconnexion
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title" id="topbar-title">Tableau de bord</div>
+        <div class="topbar-boutique" id="topbar-boutique"></div>
+      </div>
+    </div>
+    <div class="tabs" id="tabs"></div>
+    <div class="content" id="content"></div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://vfgmaevqcbqzstqnjqjt.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_zdpPYv5ivEw6n2xtU0ua6Q_oM5Ye7n1';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentUser = null;
+let currentBoutique = null;
+let boutiques = [];
+let currentTab = 'dashboard';
+let currentView = 'boutique';
+
+// ===================== AUTH =====================
+async function doLogin() {
+  const id = document.getElementById('login-id').value.trim();
+  const pw = document.getElementById('login-pw').value.trim();
+  const { data, error } = await sb.from('comptes').select('*,boutiques(*)').eq('identifiant', id).eq('mot_de_passe', pw).single();
+  if (error || !data) {
+    document.getElementById('login-error').style.display = 'block';
+    return;
+  }
+  currentUser = data;
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('user-label').textContent = data.role === 'pdg' ? 'PDG' : data.boutiques?.nom || 'Responsable';
+  document.getElementById('user-role-label').textContent = data.role === 'pdg' ? 'Accès total' : 'Boutique uniquement';
+  if (data.role === 'pdg') {
+    document.getElementById('global-btn').style.display = 'flex';
+    document.getElementById('comptes-btn').style.display = 'flex';
+  }
+  await loadBoutiques();
+}
+
+function doLogout() {
+  currentUser = null; currentBoutique = null;
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-id').value = '';
+  document.getElementById('login-pw').value = '';
+  document.getElementById('login-error').style.display = 'none';
+}
+
+// ===================== BOUTIQUES =====================
+async function loadBoutiques() {
+  const { data } = await sb.from('boutiques').select('*').order('created_at');
+  boutiques = data || [];
+  renderSidebar();
+  if (currentUser.role === 'responsable') {
+    const b = boutiques.find(b => b.id === currentUser.boutique_id);
+    if (b) selectBoutique(b);
+  } else if (boutiques.length > 0) {
+    selectBoutique(boutiques[0]);
+  }
+}
+
+function renderSidebar() {
+  const list = document.getElementById('boutiques-list');
+  const filtered = currentUser.role === 'pdg' ? boutiques : boutiques.filter(b => b.id === currentUser.boutique_id);
+  list.innerHTML = filtered.map(b => `
+    <div class="boutique-item ${currentBoutique?.id === b.id ? 'active' : ''}" onclick="selectBoutique(${JSON.stringify(b).replace(/"/g, '&quot;')})">
+      <div class="boutique-dot" style="background:${b.couleur}"></div>
+      <div>
+        <div class="boutique-name">${b.nom}</div>
+        <div class="boutique-sub">${b.lieu || ''}</div>
+      </div>
+    </div>
+  `).join('');
+
+  const addWrap = document.getElementById('add-boutique-wrap');
+  if (currentUser.role === 'pdg') {
+    addWrap.innerHTML = `<div class="add-boutique-btn" onclick="openAddBoutique()"><span>+</span> Ajouter boutique</div>`;
+  } else {
+    addWrap.innerHTML = '';
+  }
+}
+
+function selectBoutique(b) {
+  currentBoutique = b;
+  currentView = 'boutique';
+  document.getElementById('topbar-title').textContent = b.nom;
+  document.getElementById('topbar-boutique').innerHTML = `<div style="width:8px;height:8px;border-radius:50%;background:${b.couleur}"></div> ${b.lieu || 'Congo'}`;
+  renderSidebar();
+  setTab('dashboard');
+}
+
+// ===================== TABS =====================
+const TABS = [
+  { id: 'dashboard', label: '📊 Tableau de bord' },
+  { id: 'recettes', label: '💰 Recette du jour' },
+  { id: 'historique', label: '📅 Historique' },
+  { id: 'depenses', label: '💸 Dépenses' },
+  { id: 'stocks', label: '📦 Stocks' },
+  { id: 'employes', label: '👥 Employés' },
+  { id: 'besoins', label: '🛒 État de besoin' },
+];
+
+function setTab(id) {
+  currentTab = id;
+  const tabs = document.getElementById('tabs');
+  tabs.innerHTML = TABS.map(t => `<div class="tab ${t.id===id?'active':''}" onclick="setTab('${t.id}')">${t.label}</div>`).join('');
+  renderContent();
+}
+
+function renderContent() {
+  if (!currentBoutique) return;
+  if (currentTab === 'dashboard') renderDashboard();
+  else if (currentTab === 'recettes') renderRecettes();
+  else if (currentTab === 'historique') renderHistorique();
+  else if (currentTab === 'depenses') renderDepenses();
+  else if (currentTab === 'stocks') renderStocks();
+  else if (currentTab === 'employes') renderEmployes();
+  else if (currentTab === 'besoins') renderBesoins();
+}
+
+// ===================== DASHBOARD =====================
+async function renderDashboard() {
+  const today = new Date().toISOString().split('T')[0];
+  const [{ data: rec }, { data: dep }, { data: emp }, { data: stk }, { data: bes }] = await Promise.all([
+    sb.from('recettes').select('montant').eq('boutique_id', currentBoutique.id).eq('date', today),
+    sb.from('depenses').select('montant').eq('boutique_id', currentBoutique.id).eq('date', today),
+    sb.from('employes').select('id').eq('boutique_id', currentBoutique.id).eq('actif', true),
+    sb.from('stocks').select('quantite,prix_achat,prix_vente').eq('boutique_id', currentBoutique.id),
+    sb.from('besoins').select('id').eq('boutique_id', currentBoutique.id).eq('recu', false),
+  ]);
+  const totalRec = (rec||[]).reduce((s,r)=>s+parseFloat(r.montant),0);
+  const totalDep = (dep||[]).reduce((s,d)=>s+parseFloat(d.montant),0);
+  const valStock = (stk||[]).reduce((s,p)=>s+p.quantite*parseFloat(p.prix_achat),0);
+  document.getElementById('content').innerHTML = `
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Recette du jour</div>
+        <div class="stat-value green">${fmt(totalRec)}</div>
+        <div class="stat-sub">FCFA encaissés</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Dépenses du jour</div>
+        <div class="stat-value red">${fmt(totalDep)}</div>
+        <div class="stat-sub">FCFA dépensés</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Solde du jour</div>
+        <div class="stat-value ${totalRec-totalDep>=0?'green':'red'}">${fmt(totalRec-totalDep)}</div>
+        <div class="stat-sub">FCFA</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Employés actifs</div>
+        <div class="stat-value accent">${(emp||[]).length}</div>
+        <div class="stat-sub">personnes</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Valeur du stock</div>
+        <div class="stat-value amber">${fmt(valStock)}</div>
+        <div class="stat-sub">FCFA (prix achat)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Besoins en attente</div>
+        <div class="stat-value ${(bes||[]).length>0?'red':'green'}">${(bes||[]).length}</div>
+        <div class="stat-sub">articles à commander</div>
+      </div>
+    </div>
+  `;
+}
+
+// ===================== RECETTES =====================
+async function renderRecettes() {
+  const today = new Date().toISOString().split('T')[0];
+  const { data } = await sb.from('recettes').select('*').eq('boutique_id', currentBoutique.id).eq('date', today).order('created_at', {ascending:false});
+  const total = (data||[]).reduce((s,r)=>s+parseFloat(r.montant),0);
+  const modes = {};
+  (data||[]).forEach(r => { modes[r.mode_paiement] = (modes[r.mode_paiement]||0)+parseFloat(r.montant); });
+
+  document.getElementById('content').innerHTML = `
+    <div class="card">
+      <div class="card-title">Ajouter une entrée</div>
+      <div class="form-row">
+        <div>
+          <label class="inp-label">Description</label>
+          <input class="inp" id="rec-desc" placeholder="Ex: Vente chaussures...">
+        </div>
+        <div>
+          <label class="inp-label">Montant (FCFA)</label>
+          <input class="inp" id="rec-mont" type="number" placeholder="0">
+        </div>
+        <div>
+          <label class="inp-label">Mode de paiement</label>
+          <select class="inp" id="rec-mode">
+            <option value="especes">Espèces</option>
+            <option value="mobile_money">Mobile Money</option>
+            <option value="carte">Carte bancaire</option>
+            <option value="virement">Virement</option>
+            <option value="autre">Autre</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-accent" onclick="addRecette()">+ Enregistrer</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Entrées d'aujourd'hui — ${today}</div>
+      ${(data||[]).length === 0 ? '<div class="empty-state"><p>Aucune recette enregistrée aujourd\'hui</p></div>' : `
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Description</th><th>Mode</th><th>Montant</th><th></th></tr></thead>
+          <tbody>${(data||[]).map(r=>`
+            <tr>
+              <td>${r.description}</td>
+              <td><span class="badge badge-accent">${r.mode_paiement}</span></td>
+              <td class="green" style="font-weight:700">${fmt(r.montant)} FCFA</td>
+              <td><button class="btn btn-red btn-sm" onclick="delRecette('${r.id}')">✕</button></td>
+            </tr>
+          `).join('')}</tbody>
+        </table>
+      </div>
+      `}
+      <div class="recette-total">
+        <div>
+          <div style="font-size:12px;color:var(--text2)">Total du jour</div>
+          ${Object.entries(modes).map(([m,v])=>`<div style="font-size:11px;color:var(--text2)">${m}: ${fmt(v)} FCFA</div>`).join('')}
+        </div>
+        <div style="font-size:22px;font-weight:800;color:var(--green)">${fmt(total)} FCFA</div>
+      </div>
+    </div>
+  `;
+}
+
+async function addRecette() {
+  const desc = document.getElementById('rec-desc').value.trim();
+  const mont = parseFloat(document.getElementById('rec-mont').value);
+  const mode = document.getElementById('rec-mode').value;
+  if (!desc || !mont) return notif('Remplissez tous les champs', 'error');
+  const { error } = await sb.from('recettes').insert({ boutique_id: currentBoutique.id, description: desc, montant: mont, mode_paiement: mode });
+  if (error) return notif('Erreur: ' + error.message, 'error');
+  notif('Recette enregistrée ✓', 'success');
+  renderRecettes();
+}
+
+async function delRecette(id) {
+  if (!confirm('Supprimer cette entrée ?')) return;
+  await sb.from('recettes').delete().eq('id', id);
+  renderRecettes();
+}
+
+// ===================== HISTORIQUE =====================
+async function renderHistorique() {
+  const { data } = await sb.from('recettes').select('*').eq('boutique_id', currentBoutique.id).order('date', {ascending:false}).order('created_at', {ascending:false});
+  const byDate = {};
+  (data||[]).forEach(r => {
+    if (!byDate[r.date]) byDate[r.date] = [];
+    byDate[r.date].push(r);
+  });
+  document.getElementById('content').innerHTML = `
+    <div class="card">
+      <div class="card-title">Historique des recettes</div>
+      ${Object.keys(byDate).length === 0 ? '<div class="empty-state"><p>Aucun historique disponible</p></div>' :
+        Object.entries(byDate).map(([date, rows]) => {
+          const total = rows.reduce((s,r)=>s+parseFloat(r.montant),0);
+          return `
+            <div style="margin-bottom:20px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                <div style="font-size:13px;font-weight:700">${date}</div>
+                <div style="font-size:14px;font-weight:800;color:var(--green)">${fmt(total)} FCFA</div>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>Description</th><th>Mode</th><th>Montant</th></tr></thead>
+                  <tbody>${rows.map(r=>`
+                    <tr>
+                      <td>${r.description}</td>
+                      <td><span class="badge badge-accent">${r.mode_paiement}</span></td>
+                      <td class="green" style="font-weight:600">${fmt(r.montant)} FCFA</td>
+                    </tr>
+                  `).join('')}</tbody>
+                </table>
+              </div>
+            </div>
+          `;
+        }).join('<hr style="border-color:var(--border);margin:16px 0">')}
+    </div>
+  `;
+}
+
+// ===================== DEPENSES =====================
+async function renderDepenses() {
+  const today = new Date().toISOString().split('T')[0];
+  const { data } = await sb.from('depenses').select('*').eq('boutique_id', currentBoutique.id).order('date', {ascending:false}).order('created_at', {ascending:false});
+  const total = (data||[]).reduce((s,d)=>s+parseFloat(d.montant),0);
+  document.getElementById('content').innerHTML = `
+    <div class="card">
+      <div class="card-title">Ajouter une dépense</div>
+      <div class="form-row">
+        <div>
+          <label class="inp-label">Description</label>
+          <input class="inp" id="dep-desc" placeholder="Ex: Loyer, fournitures...">
+        </div>
+        <div>
+          <label class="inp-label">Montant (FCFA)</label>
+          <input class="inp" id="dep-mont" type="number" placeholder="0">
+        </div>
+        <div>
+          <label class="inp-label">Catégorie</label>
+          <select class="inp" id="dep-cat">
+            <option value="loyer">Loyer</option>
+            <option value="salaires">Salaires</option>
+            <option value="fournitures">Fournitures</option>
+            <option value="transport">Transport</option>
+            <option value="electricite">Électricité</option>
+            <option value="autre">Autre</option>
+          </select>
+        </div>
+        <div>
+          <label class="inp-label">Date</label>
+          <input class="inp" id="dep-date" type="date" value="${today}">
+        </div>
+      </div>
+      <button class="btn btn-accent" onclick="addDepense()">+ Enregistrer</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Toutes les dépenses</div>
+      ${(data||[]).length === 0 ? '<div class="empty-state"><p>Aucune dépense enregistrée</p></div>' : `
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Description</th><th>Catégorie</th><th>Date</th><th>Montant</th><th></th></tr></thead>
+          <tbody>${(data||[]).map(d=>`
+            <tr>
+              <td>${d.description}</td>
+              <td><span class="badge badge-amber">${d.categorie}</span></td>
+              <td style="color:var(--text2)">${d.date}</td>
+              <td class="red" style="font-weight:700">${fmt(d.montant)} FCFA</td>
+              <td><button class="btn btn-red btn-sm" onclick="delDepense('${d.id}')">✕</button></td>
+            </tr>
+          `).join('')}</tbody>
+        </table>
+      </div>
+      <div class="recette-total">
+        <div style="font-size:12px;color:var(--text2)">Total des dépenses</div>
+        <div style="font-size:20px;font-weight:800;color:var(--red)">${fmt(total)} FCFA</div>
+      </div>
+      `}
+    </div>
+  `;
+}
+
+async function addDepense() {
+  const desc = document.getElementById('dep-desc').value.trim();
+  const mont = parseFloat(document.getElementById('dep-mont').value);
+  const cat = document.getElementById('dep-cat').value;
+  const date = document.getElementById('dep-date').value;
+  if (!desc || !mont) return notif('Remplissez tous les champs', 'error');
+  const { error } = await sb.from('depenses').insert({ boutique_id: currentBoutique.id, description: desc, montant: mont, categorie: cat, date });
+  if (error) return notif('Erreur', 'error');
+  notif('Dépense enregistrée ✓', 'success');
+  renderDepenses();
+}
+
+async function delDepense(id) {
+  if (!confirm('Supprimer cette dépense ?')) return;
+  await sb.from('depenses').delete().eq('id', id);
+  renderDepenses();
+}
+
+// ===================== STOCKS =====================
+async function renderStocks() {
+  const { data } = await sb.from('stocks').select('*').eq('boutique_id', currentBoutique.id).order('produit');
+  document.getElementById('content').innerHTML = `
+    <div class="card">
+      <div class="card-title">Ajouter un produit</div>
+      <div class="form-row">
+        <div><label class="inp-label">Produit</label><input class="inp" id="stk-prod" placeholder="Nom du produit"></div>
+        <div><label class="inp-label">Quantité</label><input class="inp" id="stk-qte" type="number" placeholder="0"></div>
+        <div><label class="inp-label">Prix achat (FCFA)</label><input class="inp" id="stk-pa" type="number" placeholder="0"></div>
+        <div><label class="inp-label">Prix vente (FCFA)</label><input class="inp" id="stk-pv" type="number" placeholder="0"></div>
+        <div><label class="inp-label">Durée (jours)</label><input class="inp" id="stk-dur" type="number" placeholder="0"></div>
+      </div>
+      <button class="btn btn-accent" onclick="addStock()">+ Ajouter</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Inventaire (${(data||[]).length} produits)</div>
+      ${(data||[]).length === 0 ? '<div class="empty-state"><p>Aucun produit en stock</p></div>' : `
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Produit</th><th>Qté</th><th>Prix achat</th><th>Prix vente</th><th>Marge</th><th>Durée</th><th>Actions</th></tr></thead>
+          <tbody>${(data||[]).map(p=>{
+            const marge = p.prix_vente - p.prix_achat;
+            const pct = p.prix_achat > 0 ? ((marge/p.prix_achat)*100).toFixed(0) : 0;
+            return `<tr>
+              <td style="font-weight:600">${p.produit}</td>
+              <td>${p.quantite}</td>
+              <td>${fmt(p.prix_achat)} FCFA</td>
+              <td>${fmt(p.prix_vente)} FCFA</td>
+              <td class="${marge>=0?'green':'red'}" style="font-weight:600">${fmt(marge)} FCFA <span style="font-size:11px">(${pct}%)</span></td>
+              <td style="color:var(--text2)">${p.duree_jours}j</td>
+              <td style="display:flex;gap:4px">
+                <button class="btn btn-amber btn-sm" onclick="editStock('${p.id}','${p.produit}',${p.quantite},${p.prix_achat},${p.prix_vente},${p.duree_jours})">✏️</button>
+                <button class="btn btn-red btn-sm" onclick="delStock('${p.id}')">✕</button>
+              </td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table>
+      </div>
+      `}
+    </div>
+  `;
+}
+
+async function addStock() {
+  const prod = document.getElementById('stk-prod').value.trim();
+  const qte = parseInt(document.getElementById('stk-qte').value)||0;
+  const pa = parseFloat(document.getElementById('stk-pa').value)||0;
+  const pv = parseFloat(document.getElementById('stk-pv').value)||0;
+  const dur = parseInt(document.getElementById('stk-dur').value)||0;
+  if (!prod) return notif('Entrez le nom du produit', 'error');
+  const { error } = await sb.from('stocks').insert({ boutique_id: currentBoutique.id, produit: prod, quantite: qte, prix_achat: pa, prix_vente: pv, duree_jours: dur });
+  if (error) return notif('Erreur', 'error');
+  notif('Produit ajouté ✓', 'success');
+  renderStocks();
+}
+
+async function delStock(id) {
+  if (!confirm('Supprimer ce produit ?')) return;
+  await sb.from('stocks').delete().eq('id', id);
+  renderStocks();
+}
+
+function editStock(id, prod, qte, pa, pv, dur) {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal">
+      <div class="modal-title">Modifier le produit</div>
+      <div class="form-row">
+        <div><label class="inp-label">Produit</label><input class="inp" id="e-prod" value="${prod}"></div>
+        <div><label class="inp-label">Quantité</label><input class="inp" id="e-qte" type="number" value="${qte}"></div>
+        <div><label class="inp-label">Prix achat</label><input class="inp" id="e-pa" type="number" value="${pa}"></div>
+        <div><label class="inp-label">Prix vente</label><input class="inp" id="e-pv" type="number" value="${pv}"></div>
+        <div><label class="inp-label">Durée (jours)</label><input class="inp" id="e-dur" type="number" value="${dur}"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove()">Annuler</button>
+        <button class="btn btn-accent" onclick="saveStock('${id}')">Enregistrer</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+async function saveStock(id) {
+  const prod = document.getElementById('e-prod').value.trim();
+  const qte = parseInt(document.getElementById('e-qte').value)||0;
+  const pa = parseFloat(document.getElementById('e-pa').value)||0;
+  const pv = parseFloat(document.getElementById('e-pv').value)||0;
+  const dur = parseInt(document.getElementById('e-dur').value)||0;
+  await sb.from('stocks').update({ produit: prod, quantite: qte, prix_achat: pa, prix_vente: pv, duree_jours: dur, updated_at: new Date().toISOString() }).eq('id', id);
+  document.querySelector('.modal-overlay').remove();
+  notif('Produit modifié ✓', 'success');
+  renderStocks();
+}
+
+// ===================== EMPLOYES =====================
+async function renderEmployes() {
+  const { data } = await sb.from('employes').select('*').eq('boutique_id', currentBoutique.id).order('nom');
+  const isPdg = currentUser.role === 'pdg';
+  document.getElementById('content').innerHTML = `
+    ${isPdg ? `
+    <div class="card">
+      <div class="card-title">Ajouter un employé</div>
+      <div class="form-row">
+        <div><label class="inp-label">Nom complet</label><input class="inp" id="emp-nom" placeholder="Prénom Nom"></div>
+        <div><label class="inp-label">Poste</label><input class="inp" id="emp-poste" placeholder="Ex: Vendeur, Caissier..."></div>
+        <div><label class="inp-label">Téléphone</label><input class="inp" id="emp-tel" placeholder="+242..."></div>
+        <div><label class="inp-label">Email</label><input class="inp" id="emp-email" placeholder="email@..."></div>
+      </div>
+      <button class="btn btn-accent" onclick="addEmploye()">+ Ajouter</button>
+    </div>
+    ` : '<div class="card" style="color:var(--text2);font-size:13px;text-align:center;padding:20px">🔒 Seul le PDG peut modifier les employés</div>'}
+    <div class="card">
+      <div class="card-title">Équipe (${(data||[]).length} personnes)</div>
+      ${(data||[]).length === 0 ? '<div class="empty-state"><p>Aucun employé enregistré</p></div>' : `
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Nom</th><th>Poste</th><th>Téléphone</th><th>Statut</th>${isPdg?'<th>Actions</th>':''}</tr></thead>
+          <tbody>${(data||[]).map(e=>`
+            <tr>
+              <td style="font-weight:600">${e.nom}</td>
+              <td>${e.poste||'-'}</td>
+              <td style="color:var(--text2)">${e.telephone||'-'}</td>
+              <td><span class="badge ${e.actif?'badge-green':'badge-gray'}">${e.actif?'Actif':'Inactif'}</span></td>
+              ${isPdg?`<td style="display:flex;gap:4px">
+                <button class="btn btn-amber btn-sm" onclick="editEmploye('${e.id}','${e.nom}','${e.poste||''}','${e.telephone||''}','${e.email||''}')">✏️</button>
+                <button class="btn btn-ghost btn-sm" onclick="toggleEmploye('${e.id}',${e.actif})">${e.actif?'⏸':'▶'}</button>
+                <button class="btn btn-red btn-sm" onclick="delEmploye('${e.id}')">✕</button>
+              </td>`:''}
+            </tr>
+          `).join('')}</tbody>
+        </table>
+      </div>
+      `}
+    </div>
+  `;
+}
+
+async function addEmploye() {
+  const nom = document.getElementById('emp-nom').value.trim();
+  const poste = document.getElementById('emp-poste').value.trim();
+  const tel = document.getElementById('emp-tel').value.trim();
+  const email = document.getElementById('emp-email').value.trim();
+  if (!nom) return notif('Entrez le nom', 'error');
+  const { error } = await sb.from('employes').insert({ boutique_id: currentBoutique.id, nom, poste, telephone: tel, email });
+  if (error) return notif('Erreur', 'error');
+  notif('Employé ajouté ✓', 'success');
+  renderEmployes();
+}
+
+async function delEmploye(id) {
+  if (!confirm('Supprimer cet employé ?')) return;
+  await sb.from('employes').delete().eq('id', id);
+  renderEmployes();
+}
+
+async function toggleEmploye(id, actif) {
+  await sb.from('employes').update({ actif: !actif }).eq('id', id);
+  renderEmployes();
+}
+
+function editEmploye(id, nom, poste, tel, email) {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal">
+      <div class="modal-title">Modifier l'employé</div>
+      <div class="form-row">
+        <div><label class="inp-label">Nom</label><input class="inp" id="ee-nom" value="${nom}"></div>
+        <div><label class="inp-label">Poste</label><input class="inp" id="ee-poste" value="${poste}"></div>
+        <div><label class="inp-label">Téléphone</label><input class="inp" id="ee-tel" value="${tel}"></div>
+        <div><label class="inp-label">Email</label><input class="inp" id="ee-email" value="${email}"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove()">Annuler</button>
+        <button class="btn btn-accent" onclick="saveEmploye('${id}')">Enregistrer</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+async function saveEmploye(id) {
+  const nom = document.getElementById('ee-nom').value.trim();
+  const poste = document.getElementById('ee-poste').value.trim();
+  const tel = document.getElementById('ee-tel').value.trim();
+  const email = document.getElementById('ee-email').value.trim();
+  await sb.from('employes').update({ nom, poste, telephone: tel, email }).eq('id', id);
+  document.querySelector('.modal-overlay').remove();
+  notif('Employé modifié ✓', 'success');
+  renderEmployes();
+}
+
+// ===================== BESOINS =====================
+async function renderBesoins() {
+  const { data } = await sb.from('besoins').select('*').eq('boutique_id', currentBoutique.id).order('urgence').order('created_at', {ascending:false});
+  document.getElementById('content').innerHTML = `
+    <div class="card">
+      <div class="card-title">Ajouter un besoin</div>
+      <div class="form-row">
+        <div><label class="inp-label">Article</label><input class="inp" id="bes-art" placeholder="Ex: Sacs plastiques..."></div>
+        <div><label class="inp-label">Quantité</label><input class="inp" id="bes-qte" type="number" value="1"></div>
+        <div><label class="inp-label">Unité</label>
+          <select class="inp" id="bes-unit">
+            <option>unité</option><option>paire</option><option>carton</option><option>kg</option><option>litre</option><option>sac</option>
+          </select>
+        </div>
+        <div><label class="inp-label">Urgence</label>
+          <select class="inp" id="bes-urg">
+            <option value="haute">🔴 Haute</option>
+            <option value="moyenne" selected>🟡 Moyenne</option>
+            <option value="basse">🟢 Basse</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-accent" onclick="addBesoin()">+ Ajouter</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Liste des besoins (${(data||[]).filter(b=>!b.recu).length} en attente)</div>
+      ${(data||[]).length === 0 ? '<div class="empty-state"><p>Aucun besoin enregistré</p></div>' : `
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Article</th><th>Quantité</th><th>Urgence</th><th>Statut</th><th>Actions</th></tr></thead>
+          <tbody>${(data||[]).map(b=>`
+            <tr>
+              <td style="font-weight:600;${b.recu?'text-decoration:line-through;color:var(--text2)':''}">${b.article}</td>
+              <td>${b.quantite} ${b.unite}</td>
+              <td><span class="badge ${b.urgence==='haute'?'badge-red':b.urgence==='moyenne'?'badge-amber':'badge-green'}">${b.urgence}</span></td>
+              <td><span class="badge ${b.recu?'badge-green':'badge-gray'}">${b.recu?'Reçu':'En attente'}</span></td>
+              <td style="display:flex;gap:4px">
+                ${!b.recu?`<button class="btn btn-green btn-sm" onclick="recuBesoin('${b.id}')">✓ Reçu</button>`:''}
+                <button class="btn btn-red btn-sm" onclick="delBesoin('${b.id}')">✕</button>
+              </td>
+            </tr>
+          `).join('')}</tbody>
+        </table>
+      </div>
+      `}
+    </div>
+  `;
+}
+
+async function addBesoin() {
+  const art = document.getElementById('bes-art').value.trim();
+  const qte = parseInt(document.getElementById('bes-qte').value)||1;
+  const unite = document.getElementById('bes-unit').value;
+  const urgence = document.getElementById('bes-urg').value;
+  if (!art) return notif('Entrez le nom de l\'article', 'error');
+  await sb.from('besoins').insert({ boutique_id: currentBoutique.id, article: art, quantite: qte, unite, urgence });
+  notif('Besoin ajouté ✓', 'success');
+  renderBesoins();
+}
+
+async function recuBesoin(id) {
+  await sb.from('besoins').update({ recu: true }).eq('id', id);
+  renderBesoins();
+}
+
+async function delBesoin(id) {
+  if (!confirm('Supprimer ce besoin ?')) return;
+  await sb.from('besoins').delete().eq('id', id);
+  renderBesoins();
+}
+
+// ===================== VUE GLOBALE =====================
+async function showGlobal() {
+  currentView = 'global';
+  currentBoutique = null;
+  document.getElementById('topbar-title').textContent = 'Vue globale';
+  document.getElementById('topbar-boutique').textContent = 'Toutes les boutiques';
+  document.getElementById('tabs').innerHTML = '';
+  renderSidebar();
+  const today = new Date().toISOString().split('T')[0];
+  const rows = await Promise.all(boutiques.map(async b => {
+    const [{ data: rec }, { data: dep }] = await Promise.all([
+      sb.from('recettes').select('montant').eq('boutique_id', b.id).eq('date', today),
+      sb.from('depenses').select('montant').eq('boutique_id', b.id).eq('date', today),
+    ]);
+    const r = (rec||[]).reduce((s,x)=>s+parseFloat(x.montant),0);
+    const d = (dep||[]).reduce((s,x)=>s+parseFloat(x.montant),0);
+    return { b, r, d };
+  }));
+  const totalR = rows.reduce((s,x)=>s+x.r,0);
+  const totalD = rows.reduce((s,x)=>s+x.d,0);
+  document.getElementById('content').innerHTML = `
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">Recettes totales</div><div class="stat-value green">${fmt(totalR)}</div><div class="stat-sub">FCFA aujourd'hui</div></div>
+      <div class="stat-card"><div class="stat-label">Dépenses totales</div><div class="stat-value red">${fmt(totalD)}</div><div class="stat-sub">FCFA aujourd'hui</div></div>
+      <div class="stat-card"><div class="stat-label">Solde total</div><div class="stat-value ${totalR-totalD>=0?'green':'red'}">${fmt(totalR-totalD)}</div><div class="stat-sub">FCFA</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Résumé par boutique — ${today}</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Boutique</th><th>Recettes</th><th>Dépenses</th><th>Solde</th></tr></thead>
+          <tbody>${rows.map(({b,r,d})=>`
+            <tr class="global-row">
+              <td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${b.couleur};margin-right:8px"></span>${b.nom}</td>
+              <td class="green">${fmt(r)} FCFA</td>
+              <td class="red">${fmt(d)} FCFA</td>
+              <td class="${r-d>=0?'green':'red'}" style="font-weight:700">${fmt(r-d)} FCFA</td>
+            </tr>
+          `).join('')}
+          <tr style="font-weight:800;border-top:2px solid var(--border)">
+            <td>TOTAL</td>
+            <td class="green">${fmt(totalR)} FCFA</td>
+            <td class="red">${fmt(totalD)} FCFA</td>
+            <td class="${totalR-totalD>=0?'green':'red'}">${fmt(totalR-totalD)} FCFA</td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+// ===================== COMPTES =====================
+async function showComptes() {
+  currentView = 'comptes';
+  document.getElementById('topbar-title').textContent = 'Gestion des comptes';
+  document.getElementById('topbar-boutique').textContent = '';
+  document.getElementById('tabs').innerHTML = '';
+  const { data } = await sb.from('comptes').select('*,boutiques(nom)').order('role');
+  document.getElementById('content').innerHTML = `
+    <div class="card">
+      <div class="card-title">Comptes utilisateurs</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:16px">Modifiez l'identifiant et/ou le mot de passe de chaque compte puis cliquez sur 💾 Sauver</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Rôle</th><th>Boutique</th><th>Identifiant</th><th>Mot de passe</th><th>Action</th></tr></thead>
+          <tbody>${(data||[]).map(c=>`
+            <tr>
+              <td><span class="badge ${c.role==='pdg'?'badge-accent':'badge-green'}">${c.role}</span></td>
+              <td style="color:var(--text2)">${c.boutiques?.nom||'Toutes les boutiques'}</td>
+              <td><input class="inp" id="id-${c.id}" value="${c.identifiant}" style="width:130px" placeholder="Identifiant"></td>
+              <td><input class="inp" id="pw-${c.id}" value="${c.mot_de_passe}" style="width:130px" placeholder="Mot de passe"></td>
+              <td><button class="btn btn-amber btn-sm" onclick="saveCompte('${c.id}')">💾 Sauver</button></td>
+            </tr>
+          `).join('')}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+async function saveCompte(id) {
+  const newId = document.getElementById('id-'+id).value.trim();
+  const pw = document.getElementById('pw-'+id).value.trim();
+  if (!newId) return notif('Identifiant vide', 'error');
+  if (!pw) return notif('Mot de passe vide', 'error');
+  const { error } = await sb.from('comptes').update({ identifiant: newId, mot_de_passe: pw }).eq('id', id);
+  if (error) return notif('Erreur : identifiant déjà utilisé ?', 'error');
+  notif('Compte modifié ✓', 'success');
+  showComptes();
+}
+
+// ===================== ADD BOUTIQUE =====================
+function openAddBoutique() {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal">
+      <div class="modal-title">Ajouter une boutique</div>
+      <div class="form-row">
+        <div><label class="inp-label">Nom</label><input class="inp" id="nb-nom" placeholder="Ex: Boutique Pointe-Noire"></div>
+        <div><label class="inp-label">Lieu</label><input class="inp" id="nb-lieu" placeholder="Ex: Pointe-Noire"></div>
+        <div><label class="inp-label">Couleur</label>
+          <select class="inp" id="nb-col">
+            <option value="#534AB7">Violet</option>
+            <option value="#1D9E75">Vert</option>
+            <option value="#D85A30">Orange</option>
+            <option value="#BA7517">Ambre</option>
+            <option value="#185FA5">Bleu</option>
+            <option value="#b04fa5">Rose</option>
+          </select>
+        </div>
+        <div><label class="inp-label">Identifiant connexion</label><input class="inp" id="nb-id" placeholder="Ex: boutique6"></div>
+        <div><label class="inp-label">Mot de passe</label><input class="inp" id="nb-pw" placeholder="Ex: pass6"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove()">Annuler</button>
+        <button class="btn btn-accent" onclick="saveBoutique()">Créer</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+async function saveBoutique() {
+  const nom = document.getElementById('nb-nom').value.trim();
+  const lieu = document.getElementById('nb-lieu').value.trim();
+  const couleur = document.getElementById('nb-col').value;
+  const id = document.getElementById('nb-id').value.trim();
+  const pw = document.getElementById('nb-pw').value.trim();
+  if (!nom || !id || !pw) return notif('Remplissez tous les champs', 'error');
+  const { data, error } = await sb.from('boutiques').insert({ nom, lieu, couleur }).select().single();
+  if (error) return notif('Erreur', 'error');
+  await sb.from('comptes').insert({ identifiant: id, mot_de_passe: pw, role: 'responsable', boutique_id: data.id });
+  document.querySelector('.modal-overlay').remove();
+  notif('Boutique créée ✓', 'success');
+  await loadBoutiques();
+}
+
+// ===================== UTILS =====================
+function fmt(n) {
+  return Math.round(n).toLocaleString('fr-FR');
+}
+
+function notif(msg, type='success') {
+  const el = document.getElementById('notif');
+  el.textContent = (type==='success'?'✓ ':'✕ ') + msg;
+  el.className = 'show ' + type;
+  clearTimeout(window._notifTimer);
+  window._notifTimer = setTimeout(() => { el.className = ''; }, 3000);
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+document.addEventListener('click', e => {
+  const sidebar = document.getElementById('sidebar');
+  const toggle = document.getElementById('menu-toggle');
+  if (window.innerWidth <= 768 && sidebar.classList.contains('open') && !sidebar.contains(e.target) && !toggle.contains(e.target)) {
+    sidebar.classList.remove('open');
+  }
+});
+</script>
+</body>
+</html>
