@@ -1,0 +1,1886 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nance Business</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --bg: #0a0c10; --bg2: #111318; --bg3: #1a1d24; --border: #2a2d35;
+    --text: #e8eaf0; --text2: #8b8fa8; --accent: #5b5ef4; --accent2: #7c7ff5;
+    --green: #22c97a; --red: #f04f5e; --amber: #f59e0b; --radius: 12px;
+    --font: 'Plus Jakarta Sans', sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* LOGIN */
+  #login-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: radial-gradient(ellipse at 50% 0%, #1a1d6e22 0%, transparent 70%); }
+  .login-box { background: var(--bg2); border: 1px solid var(--border); border-radius: 20px; padding: 40px; width: 100%; max-width: 400px; box-shadow: 0 20px 60px #00000060; }
+  .login-logo { text-align: center; margin-bottom: 32px; }
+  .login-logo h1 { font-size: 26px; font-weight: 800; background: linear-gradient(135deg, #5b5ef4, #22c97a); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -0.5px; }
+  .login-logo p { color: var(--text2); font-size: 13px; margin-top: 4px; }
+  .form-group { margin-bottom: 16px; }
+  .form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .form-group input { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; color: var(--text); font-family: var(--font); font-size: 14px; outline: none; transition: border-color 0.2s; }
+  .form-group input:focus { border-color: var(--accent); }
+  .btn-primary { width: 100%; background: var(--accent); color: #fff; border: none; border-radius: var(--radius); padding: 13px; font-family: var(--font); font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s, transform 0.1s; margin-top: 8px; }
+  .btn-primary:hover { background: var(--accent2); }
+  .forgot-link { text-align: center; margin-top: 12px; font-size: 12px; color: var(--accent2); cursor: pointer; text-decoration: underline; }
+  .login-error { color: var(--red); font-size: 13px; text-align: center; margin-top: 10px; display: none; }
+
+  /* SIDEBAR */
+  #app { display: none; }
+  .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 240px; background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 100; overflow-y: auto; }
+  .sidebar-header { padding: 20px 16px 12px; border-bottom: 1px solid var(--border); }
+  .sidebar-header h1 { font-size: 16px; font-weight: 800; background: linear-gradient(135deg, #5b5ef4, #22c97a); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .sidebar-header p { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  .user-badge { margin: 12px 16px; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 12px; display: flex; align-items: center; gap: 8px; }
+  .user-badge .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+  .user-badge span { color: var(--text2); }
+  .user-badge strong { color: var(--text); font-size: 11px; }
+  .section-label { padding: 16px 16px 6px; font-size: 10px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 0.8px; }
+  .boutique-item { margin: 2px 8px; padding: 8px 10px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.15s; }
+  .boutique-item:hover { background: var(--bg3); }
+  .boutique-item.active { background: var(--bg3); border: 1px solid var(--border); }
+  .boutique-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .boutique-name { font-size: 13px; font-weight: 500; flex: 1; }
+  .boutique-sub { font-size: 11px; color: var(--text2); }
+  .add-boutique-btn { margin: 4px 8px; padding: 8px 10px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; color: var(--text2); font-size: 13px; transition: background 0.15s, color 0.15s; border: 1px dashed var(--border); }
+  .add-boutique-btn:hover { background: var(--bg3); color: var(--text); }
+  .nav-section { margin-top: auto; border-top: 1px solid var(--border); padding: 8px 0; }
+  .nav-item { margin: 2px 8px; padding: 8px 10px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text2); transition: background 0.15s, color 0.15s; }
+  .nav-item:hover { background: var(--bg3); color: var(--text); }
+  .logout-btn { color: var(--red) !important; }
+  .notif-badge { background: var(--red); color: #fff; font-size: 10px; font-weight: 700; border-radius: 10px; padding: 1px 6px; margin-left: auto; }
+
+  /* MAIN */
+  .main { margin-left: 240px; min-height: 100vh; }
+  .topbar { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+  .topbar-title { font-size: 16px; font-weight: 700; }
+  .topbar-boutique { font-size: 12px; color: var(--text2); display: flex; align-items: center; gap: 6px; }
+  .tabs { display: flex; gap: 4px; padding: 16px 24px 0; border-bottom: 1px solid var(--border); background: var(--bg2); overflow-x: auto; }
+  .tab { padding: 8px 16px; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--text2); white-space: nowrap; transition: color 0.15s; border-bottom: 2px solid transparent; }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent2); border-bottom-color: var(--accent); }
+  .content { padding: 24px; }
+
+  /* CARDS */
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+  .card-title { font-size: 13px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; }
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; }
+  .stat-label { font-size: 11px; color: var(--text2); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-value { font-size: 22px; font-weight: 800; margin-top: 4px; }
+  .stat-sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  .green { color: var(--green); } .red { color: var(--red); } .amber { color: var(--amber); } .accent { color: var(--accent2); }
+
+  /* TABLE */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 8px 12px; color: var(--text2); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); }
+  td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg3); }
+
+  /* FORMS */
+  .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 12px; }
+  .inp { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; color: var(--text); font-family: var(--font); font-size: 13px; outline: none; width: 100%; transition: border-color 0.2s; }
+  .inp:focus { border-color: var(--accent); }
+  select.inp { cursor: pointer; }
+  .inp-label { font-size: 11px; color: var(--text2); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; display: block; }
+  .btn { padding: 9px 16px; border-radius: 8px; border: none; font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity 0.2s, transform 0.1s; }
+  .btn:active { transform: scale(0.97); }
+  .btn-accent { background: var(--accent); color: #fff; } .btn-accent:hover { opacity: 0.85; }
+  .btn-green { background: #22c97a22; color: var(--green); border: 1px solid #22c97a44; }
+  .btn-red { background: #f04f5e22; color: var(--red); border: 1px solid #f04f5e44; }
+  .btn-amber { background: #f59e0b22; color: var(--amber); border: 1px solid #f59e0b44; }
+  .btn-ghost { background: var(--bg3); color: var(--text2); border: 1px solid var(--border); }
+  .btn-ghost:hover { color: var(--text); }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+  /* BADGE */
+  .badge { display: inline-block; padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .badge-green { background: #22c97a22; color: var(--green); }
+  .badge-red { background: #f04f5e22; color: var(--red); }
+  .badge-amber { background: #f59e0b22; color: var(--amber); }
+  .badge-accent { background: #5b5ef422; color: var(--accent2); }
+  .badge-gray { background: var(--bg3); color: var(--text2); }
+
+  /* MODAL */
+  .modal-overlay { position: fixed; inset: 0; background: #00000080; z-index: 200; display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .modal { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 24px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+  .modal-title { font-size: 16px; font-weight: 700; margin-bottom: 20px; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+
+  /* RECETTE */
+  .recette-total { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 18px; margin-top: 12px; display: flex; justify-content: space-between; align-items: center; }
+
+  /* CALENDRIER */
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 12px; }
+  .cal-day { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 6px; min-height: 70px; cursor: pointer; transition: border-color 0.15s; }
+  .cal-day:hover { border-color: var(--accent); }
+  .cal-day.today { border-color: var(--accent); background: #5b5ef411; }
+  .cal-day.other-month { opacity: 0.4; }
+  .cal-day-num { font-size: 12px; font-weight: 600; color: var(--text2); }
+  .cal-event { font-size: 10px; background: var(--accent); color: #fff; border-radius: 4px; padding: 1px 4px; margin-top: 2px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .cal-header { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 4px; }
+  .cal-header-day { text-align: center; font-size: 11px; font-weight: 700; color: var(--text2); padding: 4px; }
+  .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+
+  /* CHAT */
+  .chat-container { display: flex; flex-direction: column; height: 500px; }
+  .chat-messages { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .chat-msg { max-width: 75%; padding: 8px 12px; border-radius: 12px; font-size: 13px; line-height: 1.5; }
+  .chat-msg.moi { align-self: flex-end; background: var(--accent); color: #fff; border-radius: 12px 12px 4px 12px; }
+  .chat-msg.autre { align-self: flex-start; background: var(--bg3); border: 1px solid var(--border); border-radius: 12px 12px 12px 4px; }
+  .chat-msg-info { font-size: 10px; opacity: 0.7; margin-top: 3px; }
+  .chat-input-row { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--border); }
+  .chat-boutique-tabs { display: flex; gap: 4px; padding: 8px 12px; border-bottom: 1px solid var(--border); overflow-x: auto; flex-shrink: 0; }
+  .chat-boutique-tab { padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; color: var(--text2); transition: all 0.15s; white-space: nowrap; }
+  .chat-boutique-tab.active { background: var(--accent); color: #fff; }
+  .msg-check { font-size: 11px; margin-left: 4px; }
+  .msg-check.lu { color: #22c97a; }
+  .msg-check.envoye { color: rgba(255,255,255,0.5); }
+  .typing-indicator { align-self: flex-start; background: var(--bg3); border: 1px solid var(--border); border-radius: 12px 12px 12px 4px; padding: 8px 14px; font-size: 12px; color: var(--text2); font-style: italic; display: flex; align-items: center; gap: 6px; }
+  .typing-dots span { display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: var(--text2); animation: typingAnim 1.2s infinite; }
+  .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes typingAnim { 0%,60%,100%{transform:translateY(0);opacity:0.4} 30%{transform:translateY(-4px);opacity:1} }
+
+  /* NOTIFICATION POPUP */
+  #notif { position: fixed; bottom: 24px; right: 24px; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 18px; font-size: 13px; font-weight: 500; z-index: 999; transform: translateY(80px); opacity: 0; transition: all 0.3s; max-width: 300px; }
+  #notif.show { transform: translateY(0); opacity: 1; }
+  #notif.success { border-left: 3px solid var(--green); }
+  #notif.error { border-left: 3px solid var(--red); }
+
+  /* EMPTY */
+  .empty-state { text-align: center; padding: 48px 24px; color: var(--text2); }
+  .empty-state p { font-size: 14px; margin-top: 8px; }
+
+  /* GLOBAL VIEW */
+  .global-row td:first-child { font-weight: 600; }
+
+  /* MOBILE */
+  #menu-toggle { display: none; position: fixed; top: 12px; left: 12px; z-index: 300; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; cursor: pointer; font-size: 18px; }
+  @media (max-width: 768px) {
+    .sidebar { transform: translateX(-100%); transition: transform 0.3s; }
+    .sidebar.open { transform: translateX(0); }
+    .main { margin-left: 0; }
+    #menu-toggle { display: block; }
+    .topbar { padding-left: 52px; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .form-row { grid-template-columns: 1fr; }
+    .content { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+<button id="menu-toggle" onclick="toggleSidebar()">☰</button>
+<div id="notif"></div>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <h1>Nance Business</h1>
+      <p>Gestion multi-boutiques • République du Congo</p>
+    </div>
+    <div class="form-group">
+      <label>Identifiant</label>
+      <input type="text" id="login-id" placeholder="Ex: pdg" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="form-group">
+      <label>Mot de passe</label>
+      <div style="position:relative">
+        <input type="password" id="login-pw" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()" style="padding-right:42px;width:100%">
+        <button type="button" id="pw-eye-btn" onclick="togglePwVisible()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text2);font-size:17px;line-height:1;padding:0">👁</button>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="doLogin()">Se connecter</button>
+    <div class="forgot-link" onclick="showForgotPwd()">🔑 Mot de passe oublié ?</div>
+    <div class="login-error" id="login-error">Identifiant ou mot de passe incorrect</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <h1>Nance Business</h1>
+      <p>Tableau de bord</p>
+    </div>
+    <div class="user-badge">
+      <div class="dot"></div>
+      <div><strong id="user-label">PDG</strong><br><span id="user-role-label">Accès total</span></div>
+    </div>
+    <div class="section-label">Boutiques</div>
+    <div id="boutiques-list"></div>
+    <div id="add-boutique-wrap"></div>
+    <div class="nav-section">
+      <div id="global-btn" class="nav-item" onclick="showGlobal()" style="display:none"><span>🌍</span> Vue globale</div>
+      <div id="employes-global-btn" class="nav-item" onclick="showEmployesGlobal()" style="display:none"><span>👥</span> Employés global</div>
+      <div id="immo-global-btn" class="nav-item" onclick="showImmoGlobal()" style="display:none"><span>🏗</span> Immobilisations</div>
+      <div id="chat-btn" class="nav-item" onclick="showChat()"><span>💬</span> Messages <span id="chat-badge" class="notif-badge" style="display:none">0</span></div>
+      <div id="notifs-pdg-btn" class="nav-item" onclick="showNotifsPdg()" style="display:none"><span>🔔</span> Notifications <span id="notifs-pdg-badge" class="notif-badge" style="display:none">0</span></div>
+      <div id="comptes-btn" class="nav-item" onclick="showComptes()" style="display:none"><span>🔑</span> Comptes</div>
+      <div class="nav-item logout-btn" onclick="doLogout()"><span>→</span> Déconnexion</div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title" id="topbar-title">Tableau de bord</div>
+        <div class="topbar-boutique" id="topbar-boutique"></div>
+      </div>
+    </div>
+    <div class="tabs" id="tabs"></div>
+    <div class="content" id="content"></div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://vfgmaevqcbqzstqnjqjt.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_zdpPYv5ivEw6n2xtU0ua6Q_oM5Ye7n1';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentUser = null, currentBoutique = null, boutiques = [], currentTab = 'dashboard', currentView = 'boutique';
+let chatBoutiqueId = null, chatInterval = null, notifInterval = null;
+
+// ===================== AUTH =====================
+async function doLogin() {
+  const id = document.getElementById('login-id').value.trim();
+  const pw = document.getElementById('login-pw').value.trim();
+  const { data, error } = await sb.from('comptes').select('*,boutiques(*)').eq('identifiant', id).eq('mot_de_passe', pw).single();
+  if (error || !data) { document.getElementById('login-error').style.display = 'block'; return; }
+  currentUser = data;
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('user-label').textContent = data.role === 'pdg' ? 'PDG' : data.role === 'superviseur' ? 'Superviseur' : data.boutiques?.nom || 'Responsable';
+  document.getElementById('user-role-label').textContent = data.role === 'pdg' ? 'Accès total' : data.role === 'superviseur' ? 'Lecture & Messages' : 'Boutique uniquement';
+  if (data.role === 'pdg') {
+    document.getElementById('global-btn').style.display = 'flex';
+    document.getElementById('employes-global-btn').style.display = 'flex';
+    document.getElementById('comptes-btn').style.display = 'flex';
+    document.getElementById('notifs-pdg-btn').style.display = 'flex';
+  }
+  if (data.role === 'superviseur') {
+    document.getElementById('global-btn').style.display = 'flex';
+    document.getElementById('employes-global-btn').style.display = 'flex';
+    document.getElementById('immo-global-btn').style.display = 'flex';
+  }
+  startNotifCheck();
+  await loadBoutiques();
+}
+
+function doLogout() {
+  if (notifInterval) clearInterval(notifInterval);
+  if (chatInterval) clearInterval(chatInterval);
+  clearTyping();
+  currentUser = null; currentBoutique = null;
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-id').value = '';
+  document.getElementById('login-pw').value = '';
+  document.getElementById('login-error').style.display = 'none';
+}
+
+function showForgotPwd() {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal">
+      <div class="modal-title">🔑 Mot de passe oublié</div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Cette fonctionnalité nécessite l'aide de l'administrateur. Voici les étapes :</p>
+      <div style="background:var(--bg3);border-radius:8px;padding:14px;font-size:13px;line-height:1.8;">
+        <div>1. Contactez votre administrateur système</div>
+        <div>2. Allez sur <strong>supabase.com</strong></div>
+        <div>3. Ouvrez l'éditeur SQL</div>
+        <div>4. Exécutez :</div>
+        <div style="font-family:monospace;font-size:11px;background:var(--bg);padding:8px;border-radius:6px;margin-top:6px;word-break:break-all;">UPDATE comptes SET mot_de_passe = 'nouveauMDP' WHERE identifiant = 'pdg';</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-accent" onclick="this.closest('.modal-overlay').remove()">Fermer</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+// ===================== BOUTIQUES =====================
+async function loadBoutiques() {
+  const { data } = await sb.from('boutiques').select('*').order('created_at');
+  boutiques = data || [];
+  renderSidebar();
+  if (currentUser.role === 'responsable') {
+    const b = boutiques.find(b => b.id === currentUser.boutique_id);
+    if (b) selectBoutique(b);
+  } else if (currentUser.role === 'superviseur') {
+    // Superviseur : vue globale par défaut
+    if (boutiques.length > 0) showGlobal();
+  } else if (boutiques.length > 0) {
+    selectBoutique(boutiques[0]);
+  }
+}
+
+function renderSidebar() {
+  const list = document.getElementById('boutiques-list');
+  const isSuperviseur = currentUser.role === 'superviseur';
+  const filtered = currentUser.role === 'pdg' || isSuperviseur ? boutiques : boutiques.filter(b => b.id === currentUser.boutique_id);
+  list.innerHTML = filtered.map(b => `
+    <div class="boutique-item ${currentBoutique?.id === b.id ? 'active' : ''}" onclick="${isSuperviseur ? '' : `selectBoutique(${JSON.stringify(b).replace(/"/g,'&quot;')})`}" style="${isSuperviseur?'cursor:default;opacity:0.7':''}">
+      ${b.image_url
+        ? `<img src="${b.image_url}" style="width:22px;height:22px;border-radius:4px;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'">`
+        : `<div class="boutique-dot" style="background:${b.couleur}"></div>`}
+      <div style="flex:1"><div class="boutique-name">${b.nom}</div><div class="boutique-sub">${b.lieu||''}</div></div>
+      ${currentUser.role==='pdg'?`<button style="background:none;border:none;cursor:pointer;color:var(--text2);font-size:13px;padding:2px 4px" onclick="event.stopPropagation();editBoutique('${b.id}')">✏️</button>`:''}
+    </div>`).join('');
+  const addWrap = document.getElementById('add-boutique-wrap');
+  addWrap.innerHTML = currentUser.role === 'pdg' ? `<div class="add-boutique-btn" onclick="openAddBoutique()"><span>+</span> Ajouter boutique</div>` : '';
+}
+
+function selectBoutique(b) {
+  currentBoutique = b; currentView = 'boutique';
+  document.getElementById('topbar-title').textContent = b.nom;
+  document.getElementById('topbar-boutique').innerHTML = `<div style="width:8px;height:8px;border-radius:50%;background:${b.couleur}"></div> ${b.lieu||'Congo'}`;
+  renderSidebar(); setTab('dashboard');
+}
+
+// ===================== TABS =====================
+const TABS = [
+  {id:'dashboard',label:'📊 Tableau de bord'},
+  {id:'recettes',label:'💰 Recette du jour'},
+  {id:'historique',label:'📅 Historique'},
+  {id:'depenses',label:'💸 Dépenses'},
+  {id:'stocks',label:'📦 Stocks'},
+  {id:'immobilisations',label:'🏗 Immobilisations'},
+  {id:'employes',label:'👥 Employés'},
+  {id:'besoins',label:'🛒 État de besoin'},
+  {id:'calendrier',label:'📆 Calendrier'},
+];
+
+function setTab(id) {
+  currentTab = id;
+  document.getElementById('tabs').innerHTML = TABS.map(t=>`<div class="tab ${t.id===id?'active':''}" onclick="setTab('${t.id}')">${t.label}</div>`).join('');
+  renderContent();
+}
+
+function renderContent() {
+  if (!currentBoutique) return;
+  const map = {dashboard:renderDashboard,recettes:renderRecettes,historique:renderHistorique,depenses:renderDepenses,stocks:renderStocks,immobilisations:renderImmobilisations,employes:renderEmployes,besoins:renderBesoins,calendrier:renderCalendrier};
+  if (map[currentTab]) map[currentTab]();
+}
+
+// ===================== DASHBOARD =====================
+async function renderDashboard() {
+  const today = new Date().toISOString().split('T')[0];
+  const [{data:rec},{data:dep},{data:emp},{data:stk},{data:bes}] = await Promise.all([
+    sb.from('recettes').select('montant').eq('boutique_id',currentBoutique.id).eq('date',today),
+    sb.from('depenses').select('montant').eq('boutique_id',currentBoutique.id).eq('date',today),
+    sb.from('employes').select('id').eq('boutique_id',currentBoutique.id).eq('actif',true),
+    sb.from('stocks').select('quantite,prix_achat,prix_vente').eq('boutique_id',currentBoutique.id),
+    sb.from('besoins').select('id').eq('boutique_id',currentBoutique.id).eq('recu',false),
+  ]);
+  const totalRec=(rec||[]).reduce((s,r)=>s+parseFloat(r.montant),0);
+  const totalDep=(dep||[]).reduce((s,d)=>s+parseFloat(d.montant),0);
+  const valStock=(stk||[]).reduce((s,p)=>s+p.quantite*parseFloat(p.prix_achat),0);
+  document.getElementById('content').innerHTML = `
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">Recette du jour</div><div class="stat-value green">${fmt(totalRec)}</div><div class="stat-sub">FCFA encaissés</div></div>
+      <div class="stat-card"><div class="stat-label">Dépenses du jour</div><div class="stat-value red">${fmt(totalDep)}</div><div class="stat-sub">FCFA dépensés</div></div>
+      <div class="stat-card"><div class="stat-label">Solde du jour</div><div class="stat-value ${totalRec-totalDep>=0?'green':'red'}">${fmt(totalRec-totalDep)}</div><div class="stat-sub">FCFA</div></div>
+      <div class="stat-card"><div class="stat-label">Employés actifs</div><div class="stat-value accent">${(emp||[]).length}</div><div class="stat-sub">personnes</div></div>
+      <div class="stat-card"><div class="stat-label">Valeur du stock</div><div class="stat-value amber">${fmt(valStock)}</div><div class="stat-sub">FCFA (prix achat)</div></div>
+      <div class="stat-card"><div class="stat-label">Besoins en attente</div><div class="stat-value ${(bes||[]).length>0?'red':'green'}">${(bes||[]).length}</div><div class="stat-sub">articles à commander</div></div>
+    </div>`;
+}
+
+// ===================== RECETTES =====================
+async function renderRecettes() {
+  const today = new Date().toISOString().split('T')[0];
+  const {data} = await sb.from('recettes').select('*').eq('boutique_id',currentBoutique.id).eq('date',today).order('created_at',{ascending:false});
+  const total=(data||[]).reduce((s,r)=>s+parseFloat(r.montant),0);
+  const modes={};
+  (data||[]).forEach(r=>{modes[r.mode_paiement]=(modes[r.mode_paiement]||0)+parseFloat(r.montant);});
+  document.getElementById('content').innerHTML = `
+    <div class="card">
+      <div class="card-title">Ajouter une entrée</div>
+      <div class="form-row">
+        <div><label class="inp-label">Description</label><input class="inp" id="rec-desc" placeholder="Ex: Vente chaussures..."></div>
+        <div><label class="inp-label">Montant (FCFA)</label><input class="inp" id="rec-mont" type="number" placeholder="0"></div>
+        <div><label class="inp-label">Mode de paiement</label>
+          <select class="inp" id="rec-mode">
+            <option value="especes">Espèces</option><option value="mobile_money">Mobile Money</option>
+            <option value="carte">Carte bancaire</option><option value="virement">Virement</option><option value="autre">Autre</option>
+          </select>
+        </div>
+        <div><label class="inp-label">Date</label><input class="inp" id="rec-date" type="date" value="${today}"></div>
+      </div>
+      <button class="btn btn-accent" onclick="addRecette()">+ Enregistrer</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Entrées d'aujourd'hui — ${today}</div>
+      ${(data||[]).length===0?'<div class="empty-state"><p>Aucune recette enregistrée aujourd\'hui</p></div>':`
+      <div class="table-wrap"><table>
+        <thead><tr><th>Description</th><th>Mode</th><th>Date</th><th>Montant</th><th></th></tr></thead>
+        <tbody>${(data||[]).map(r=>`<tr>
+          <td>${r.description}</td>
+          <td><span class="badge badge-accent">${r.mode_paiement}</span></td>
+          <td style="color:var(--text2)">${r.date}</td>
+          <td class="green" style="font-weight:700">${fmt(r.montant)} FCFA</td>
+          <td><button class="btn btn-red btn-sm" onclick="delRecette('${r.id}')">✕</button></td>
+        </tr>`).join('')}</tbody>
+      </table></div>`}
+      <div class="recette-total">
+        <div><div style="font-size:12px;color:var(--text2)">Total du jour</div>${Object.entries(modes).map(([m,v])=>`<div style="font-size:11px;color:var(--text2)">${m}: ${fmt(v)} FCFA</div>`).join('')}</div>
+        <div style="font-size:22px;font-weight:800;color:var(--green)">${fmt(total)} FCFA</div>
+      </div>
+    </div>`;
+}
+
+async function addRecette() {
+  const desc=document.getElementById('rec-desc').value.trim();
+  const mont=parseFloat(document.getElementById('rec-mont').value);
+  const mode=document.getElementById('rec-mode').value;
+  const date=document.getElementById('rec-date').value;
+  if(!desc||!mont) return notif('Remplissez tous les champs','error');
+  const {error}=await sb.from('recettes').insert({boutique_id:currentBoutique.id,description:desc,montant:mont,mode_paiement:mode,date});
+  if(error) return notif('Erreur: '+error.message,'error');
+  notif('Recette enregistrée ✓','success'); renderRecettes();
+}
+
+async function delRecette(id) {
+  if(!confirm('Supprimer cette entrée ?')) return;
+  await sb.from('recettes').delete().eq('id',id); renderRecettes();
+}
+
+// ===================== HISTORIQUE =====================
+async function renderHistorique() {
+  const today = new Date().toISOString().split('T')[0];
+  const {data} = await sb.from('recettes').select('*').eq('boutique_id',currentBoutique.id).order('date',{ascending:false}).order('created_at',{ascending:false});
+  const byDate={};
+  (data||[]).forEach(r=>{if(!byDate[r.date])byDate[r.date]=[];byDate[r.date].push(r);});
+  document.getElementById('content').innerHTML = `
+    <div class="card">
+      <div class="card-title">Filtrer par date</div>
+      <div class="form-row">
+        <div><label class="inp-label">Date spécifique</label><input class="inp" id="hist-date" type="date" value="${today}" onchange="filterHistorique()"></div>
+        <div style="display:flex;align-items:flex-end;gap:8px">
+          <button class="btn btn-ghost" onclick="document.getElementById('hist-date').value='';filterHistorique()">Voir tout</button>
+        </div>
+      </div>
+    </div>
+    <div id="hist-content">
+    ${Object.keys(byDate).length===0?'<div class="empty-state"><p>Aucun historique disponible</p></div>':
+      Object.entries(byDate).map(([date,rows])=>{
+        const total=rows.reduce((s,r)=>s+parseFloat(r.montant),0);
+        return `<div class="card" data-hist-date="${date}">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div style="font-size:14px;font-weight:700">${date}</div>
+            <div style="font-size:16px;font-weight:800;color:var(--green)">${fmt(total)} FCFA</div>
+          </div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Description</th><th>Mode</th><th>Montant</th></tr></thead>
+            <tbody>${rows.map(r=>`<tr>
+              <td>${r.description}</td>
+              <td><span class="badge badge-accent">${r.mode_paiement}</span></td>
+              <td class="green" style="font-weight:600">${fmt(r.montant)} FCFA</td>
+            </tr>`).join('')}</tbody>
+          </table></div>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+function filterHistorique() {
+  const val = document.getElementById('hist-date')?.value;
+  document.querySelectorAll('[data-hist-date]').forEach(el=>{
+    el.style.display = (!val || el.dataset.histDate === val) ? '' : 'none';
+  });
+}
+
+// ===================== DEPENSES =====================
+async function renderDepenses() {
+  const today=new Date().toISOString().split('T')[0];
+  const {data}=await sb.from('depenses').select('*').eq('boutique_id',currentBoutique.id).order('date',{ascending:false}).order('created_at',{ascending:false});
+  const total=(data||[]).reduce((s,d)=>s+parseFloat(d.montant),0);
+  document.getElementById('content').innerHTML=`
+    <div class="card">
+      <div class="card-title">Ajouter une dépense</div>
+      <div class="form-row">
+        <div><label class="inp-label">Description</label><input class="inp" id="dep-desc" placeholder="Ex: Loyer, fournitures..."></div>
+        <div><label class="inp-label">Montant (FCFA)</label><input class="inp" id="dep-mont" type="number" placeholder="0"></div>
+        <div><label class="inp-label">Catégorie</label>
+          <select class="inp" id="dep-cat">
+            <option value="loyer">Loyer</option><option value="salaires">Salaires</option>
+            <option value="fournitures">Fournitures</option><option value="transport">Transport</option>
+            <option value="electricite">Électricité</option><option value="autre">Autre</option>
+          </select>
+        </div>
+        <div><label class="inp-label">Date</label><input class="inp" id="dep-date" type="date" value="${today}"></div>
+      </div>
+      <button class="btn btn-accent" onclick="addDepense()">+ Enregistrer</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Toutes les dépenses</div>
+      ${(data||[]).length===0?'<div class="empty-state"><p>Aucune dépense enregistrée</p></div>':`
+      <div class="table-wrap"><table>
+        <thead><tr><th>Description</th><th>Catégorie</th><th>Date</th><th>Montant</th><th></th></tr></thead>
+        <tbody>${(data||[]).map(d=>`<tr>
+          <td>${d.description}</td>
+          <td><span class="badge badge-amber">${d.categorie}</span></td>
+          <td style="color:var(--text2)">${d.date}</td>
+          <td class="red" style="font-weight:700">${fmt(d.montant)} FCFA</td>
+          <td><button class="btn btn-red btn-sm" onclick="delDepense('${d.id}')">✕</button></td>
+        </tr>`).join('')}</tbody>
+      </table></div>
+      <div class="recette-total">
+        <div style="font-size:12px;color:var(--text2)">Total des dépenses</div>
+        <div style="font-size:20px;font-weight:800;color:var(--red)">${fmt(total)} FCFA</div>
+      </div>`}
+    </div>`;
+}
+
+async function addDepense() {
+  const desc=document.getElementById('dep-desc').value.trim();
+  const mont=parseFloat(document.getElementById('dep-mont').value);
+  const cat=document.getElementById('dep-cat').value;
+  const date=document.getElementById('dep-date').value;
+  if(!desc||!mont) return notif('Remplissez tous les champs','error');
+  await sb.from('depenses').insert({boutique_id:currentBoutique.id,description:desc,montant:mont,categorie:cat,date});
+  notif('Dépense enregistrée ✓','success'); renderDepenses();
+}
+
+async function delDepense(id) {
+  if(!confirm('Supprimer cette dépense ?')) return;
+  await sb.from('depenses').delete().eq('id',id); renderDepenses();
+}
+
+// ===================== STOCKS =====================
+async function renderStocks() {
+  const {data}=await sb.from('stocks').select('*').eq('boutique_id',currentBoutique.id).order('produit');
+  const isPdg=currentUser.role==='pdg';
+  const isResp=currentUser.role==='responsable';
+  document.getElementById('content').innerHTML=`
+    <div class="card">
+      <div class="card-title">Ajouter un produit</div>
+      <div class="form-row">
+        <div><label class="inp-label">Produit</label><input class="inp" id="stk-prod" placeholder="Nom du produit"></div>
+        <div><label class="inp-label">Quantité</label><input class="inp" id="stk-qte" type="number" placeholder="0"></div>
+        ${isPdg?`<div><label class="inp-label">Prix achat (FCFA) 🔒</label><input class="inp" id="stk-pa" type="number" placeholder="0"></div>`:`<input type="hidden" id="stk-pa" value="0">`}
+        <div><label class="inp-label">Prix vente (FCFA)</label><input class="inp" id="stk-pv" type="number" placeholder="0"></div>
+        <div><label class="inp-label">Durée (jours)</label><input class="inp" id="stk-dur" type="number" placeholder="0"></div>
+      </div>
+      <button class="btn btn-accent" onclick="addStock()">+ Ajouter</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Inventaire (${(data||[]).length} produits)</div>
+      ${(data||[]).length===0?'<div class="empty-state"><p>Aucun produit en stock</p></div>':`
+      <div class="table-wrap"><table>
+        <thead><tr><th>Produit</th><th>Qté</th>${isPdg?'<th>Prix achat</th>':''}<th>Prix vente</th>${isPdg?'<th>Marge</th>':''}<th>Durée</th><th>Actions</th></tr></thead>
+        <tbody>${(data||[]).map(p=>{
+          const marge=p.prix_vente-p.prix_achat;
+          const pct=p.prix_achat>0?((marge/p.prix_achat)*100).toFixed(0):0;
+          return `<tr>
+            <td style="font-weight:600">${p.produit}</td><td>${p.quantite}</td>
+            ${isPdg?`<td>${fmt(p.prix_achat)} FCFA</td>`:''}
+            <td>${fmt(p.prix_vente)} FCFA</td>
+            ${isPdg?`<td class="${marge>=0?'green':'red'}" style="font-weight:600">${fmt(marge)} FCFA <span style="font-size:11px">(${pct}%)</span></td>`:''}
+            <td style="color:var(--text2)">${p.duree_jours}j</td>
+            <td style="display:flex;gap:4px">
+              <button class="btn btn-amber btn-sm" onclick="editStock('${p.id}','${p.produit.replace(/'/g,"\\'")}',${p.quantite},${p.prix_achat},${p.prix_vente},${p.duree_jours})">✏️</button>
+              <button class="btn btn-red btn-sm" onclick="delStock('${p.id}')">✕</button>
+            </td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table></div>`}
+    </div>`;
+}
+
+async function addStock() {
+  const prod=document.getElementById('stk-prod').value.trim();
+  const qte=parseInt(document.getElementById('stk-qte').value)||0;
+  const pa=parseFloat(document.getElementById('stk-pa').value)||0;
+  const pv=parseFloat(document.getElementById('stk-pv').value)||0;
+  const dur=parseInt(document.getElementById('stk-dur').value)||0;
+  if(!prod) return notif('Entrez le nom du produit','error');
+  await sb.from('stocks').insert({boutique_id:currentBoutique.id,produit:prod,quantite:qte,prix_achat:pa,prix_vente:pv,duree_jours:dur});
+  notif('Produit ajouté ✓','success'); renderStocks();
+}
+
+async function delStock(id) {
+  if(!confirm('Supprimer ce produit ?')) return;
+  await sb.from('stocks').delete().eq('id',id); renderStocks();
+}
+
+function editStock(id,prod,qte,pa,pv,dur) {
+  const isPdg=currentUser.role==='pdg';
+  const o=document.createElement('div'); o.className='modal-overlay';
+  o.innerHTML=`<div class="modal"><div class="modal-title">Modifier le produit</div>
+    <div class="form-row">
+      <div><label class="inp-label">Produit</label><input class="inp" id="e-prod" value="${prod}"></div>
+      <div><label class="inp-label">Quantité</label><input class="inp" id="e-qte" type="number" value="${qte}"></div>
+      ${isPdg?`<div><label class="inp-label">Prix achat 🔒 PDG</label><input class="inp" id="e-pa" type="number" value="${pa}"></div>`:`<input type="hidden" id="e-pa" value="${pa}">`}
+      <div><label class="inp-label">Prix vente</label><input class="inp" id="e-pv" type="number" value="${pv}"></div>
+      <div><label class="inp-label">Durée (jours)</label><input class="inp" id="e-dur" type="number" value="${dur}"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove()">Annuler</button>
+      <button class="btn btn-accent" onclick="saveStock('${id}',${pa},${pv},'${prod.replace(/'/g,"\\'")}',${qte})">Enregistrer</button>
+    </div></div>`;
+  document.body.appendChild(o);
+}
+
+async function saveStock(id,oldPa,oldPv,oldProd,oldQte) {
+  const prod=document.getElementById('e-prod').value.trim();
+  const qte=parseInt(document.getElementById('e-qte').value)||0;
+  const pa=parseFloat(document.getElementById('e-pa').value)||0;
+  const pv=parseFloat(document.getElementById('e-pv').value)||0;
+  const dur=parseInt(document.getElementById('e-dur').value)||0;
+  await sb.from('stocks').update({produit:prod,quantite:qte,prix_achat:pa,prix_vente:pv,duree_jours:dur,updated_at:new Date().toISOString()}).eq('id',id);
+  // Log des modifications pour notif PDG (seulement si c'est un responsable)
+  if(currentUser.role==='responsable'){
+    const changes=[];
+    if(prod!==oldProd) changes.push(`Produit: "${oldProd}" → "${prod}"`);
+    if(qte!==oldQte) changes.push(`Quantité: ${oldQte} → ${qte}`);
+    if(pv!==oldPv) changes.push(`Prix vente: ${fmt(oldPv)} → ${fmt(pv)} FCFA`);
+    if(changes.length>0){
+      await sb.from('notifs_pdg').insert({
+        type:'stock_modifie',
+        boutique_id:currentBoutique.id,
+        boutique_nom:currentBoutique.nom,
+        auteur:currentUser.boutiques?.nom||'Responsable',
+        message:`Stock modifié — "${prod}" : ${changes.join(' | ')}`,
+        details:JSON.stringify({ancien:{produit:oldProd,quantite:oldQte,prix_vente:oldPv},nouveau:{produit:prod,quantite:qte,prix_vente:pv}}),
+        lu:false
+      });
+    }
+  }
+  document.querySelector('.modal-overlay').remove();
+  notif('Produit modifié ✓','success'); renderStocks();
+}
+
+// ===================== EMPLOYES =====================
+async function renderEmployes() {
+  const {data}=await sb.from('employes').select('*').eq('boutique_id',currentBoutique.id).order('nom');
+  const isPdg=currentUser.role==='pdg';
+  document.getElementById('content').innerHTML=`
+    ${isPdg?`<div class="card">
+      <div class="card-title">Ajouter un employé</div>
+      <div class="form-row">
+        <div><label class="inp-label">Nom complet</label><input class="inp" id="emp-nom" placeholder="Prénom Nom"></div>
+        <div><label class="inp-label">Poste</label><input class="inp" id="emp-poste" placeholder="Ex: Vendeur, Caissier..."></div>
+        <div><label class="inp-label">Téléphone</label><input class="inp" id="emp-tel" placeholder="+242..."></div>
+        <div><label class="inp-label">Email</label><input class="inp" id="emp-email" placeholder="email@..."></div>
+        <div><label class="inp-label">Adresse</label><input class="inp" id="emp-adresse" placeholder="Quartier, ville..."></div>
+        <div><label class="inp-label">Contact urgence (nom)</label><input class="inp" id="emp-urg-nom" placeholder="Nom du contact"></div>
+        <div><label class="inp-label">Contact urgence (tél)</label><input class="inp" id="emp-urg-tel" placeholder="+242..."></div>
+        <div><label class="inp-label">💰 Salaire (FCFA)</label><input class="inp" id="emp-salaire" type="number" placeholder="0"></div>
+      </div>
+      <button class="btn btn-accent" onclick="addEmploye()">+ Ajouter</button>
+    </div>`:'<div class="card" style="color:var(--text2);font-size:13px;text-align:center;padding:20px">🔒 Seul le PDG peut modifier les employés</div>'}
+    <div class="card">
+      <div class="card-title">Équipe (${(data||[]).length} personnes)</div>
+      ${(data||[]).length===0?'<div class="empty-state"><p>Aucun employé enregistré</p></div>':`
+      <div class="table-wrap"><table>
+        <thead><tr><th>Nom</th><th>Poste</th><th>Téléphone</th><th>Adresse</th><th>Contact urgence</th>${isPdg?'<th>💰 Salaire</th>':''}<th>Statut</th>${isPdg?'<th>Actions</th>':''}</tr></thead>
+        <tbody>${(data||[]).map(e=>`<tr>
+          <td style="font-weight:600">${e.nom}</td>
+          <td>${e.poste||'-'}</td>
+          <td style="color:var(--text2)">${e.telephone||'-'}</td>
+          <td style="color:var(--text2)">${e.adresse||'-'}</td>
+          <td style="color:var(--text2)">${e.urgence_nom?e.urgence_nom+' — '+e.urgence_tel:'-'}</td>
+          ${isPdg?`<td style="font-weight:600;color:var(--amber)">${e.salaire?fmt(e.salaire)+' FCFA':'-'}</td>`:''}
+          <td><span class="badge ${e.actif?'badge-green':'badge-gray'}">${e.actif?'Actif':'Inactif'}</span></td>
+          ${isPdg?`<td>
+            <div style="display:flex;gap:4px">
+              <button class="btn btn-amber btn-sm" onclick="editEmploye('${e.id}')">✏️</button>
+              <button class="btn btn-ghost btn-sm" onclick="toggleEmploye('${e.id}',${e.actif})">${e.actif?'⏸':'▶'}</button>
+              <button class="btn btn-red btn-sm" onclick="delEmploye('${e.id}')">✕</button>
+            </div>
+          </td>`:''}
+        </tr>`).join('')}</tbody>
+      </table></div>`}
+    </div>`;
+  // Stocker les données employés pour les modals
+  window._employes = data||[];
+}
+
+async function addEmploye() {
+  const nom=document.getElementById('emp-nom').value.trim();
+  const poste=document.getElementById('emp-poste').value.trim();
+  const tel=document.getElementById('emp-tel').value.trim();
+  const email=document.getElementById('emp-email').value.trim();
+  const adresse=document.getElementById('emp-adresse').value.trim();
+  const urgNom=document.getElementById('emp-urg-nom').value.trim();
+  const urgTel=document.getElementById('emp-urg-tel').value.trim();
+  const salaire=parseFloat(document.getElementById('emp-salaire')?.value)||null;
+  if(!nom) return notif('Entrez le nom','error');
+  const {error}=await sb.from('employes').insert({boutique_id:currentBoutique.id,nom,poste,telephone:tel,email,adresse,urgence_nom:urgNom,urgence_tel:urgTel,salaire});
+  if(error) return notif('Erreur: '+error.message,'error');
+  notif('Employé ajouté ✓','success');
+  await renderEmployes();
+}
+
+async function delEmploye(id) {
+  if(!confirm('Supprimer cet employé ?')) return;
+  await sb.from('employes').delete().eq('id',id); renderEmployes();
+}
+
+async function toggleEmploye(id,actif) {
+  await sb.from('employes').update({actif:!actif}).eq('id',id); renderEmployes();
+}
+
+function editEmploye(id) {
+  const e=(window._employes||[]).find(x=>x.id===id);
+  if(!e) return notif('Employé introuvable','error');
+  const o=document.createElement('div'); o.className='modal-overlay';
+  o.innerHTML=`<div class="modal"><div class="modal-title">✏️ Modifier l'employé</div>
+    <div class="form-row">
+      <div><label class="inp-label">Nom</label><input class="inp" id="ee-nom" value="${(e.nom||'').replace(/"/g,'&quot;')}"></div>
+      <div><label class="inp-label">Poste</label><input class="inp" id="ee-poste" value="${(e.poste||'').replace(/"/g,'&quot;')}"></div>
+      <div><label class="inp-label">Téléphone</label><input class="inp" id="ee-tel" value="${e.telephone||''}"></div>
+      <div><label class="inp-label">Email</label><input class="inp" id="ee-email" value="${e.email||''}"></div>
+      <div><label class="inp-label">Adresse</label><input class="inp" id="ee-adresse" value="${(e.adresse||'').replace(/"/g,'&quot;')}"></div>
+      <div><label class="inp-label">Contact urgence (nom)</label><input class="inp" id="ee-urg-nom" value="${(e.urgence_nom||'').replace(/"/g,'&quot;')}"></div>
+      <div><label class="inp-label">Contact urgence (tél)</label><input class="inp" id="ee-urg-tel" value="${e.urgence_tel||''}"></div>
+      <div><label class="inp-label">💰 Salaire (FCFA)</label><input class="inp" id="ee-salaire" type="number" value="${e.salaire||''}"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove()">Annuler</button>
+      <button class="btn btn-accent" onclick="saveEmploye('${id}')">Enregistrer</button>
+    </div></div>`;
+  document.body.appendChild(o);
+}
+
+async function saveEmploye(id) {
+  const nom=document.getElementById('ee-nom').value.trim();
+  const poste=document.getElementById('ee-poste').value.trim();
+  const tel=document.getElementById('ee-tel').value.trim();
+  const email=document.getElementById('ee-email').value.trim();
+  const adresse=document.getElementById('ee-adresse').value.trim();
+  const urgNom=document.getElementById('ee-urg-nom').value.trim();
+  const urgTel=document.getElementById('ee-urg-tel').value.trim();
+  const salaire=parseFloat(document.getElementById('ee-salaire')?.value)||null;
+  if(!nom) return notif('Nom requis','error');
+  // Récupérer l'ancien état pour le log
+  const ancien=(window._employes||[]).find(x=>x.id===id);
+  const {error}=await sb.from('employes').update({nom,poste,telephone:tel,email,adresse,urgence_nom:urgNom,urgence_tel:urgTel,salaire}).eq('id',id);
+  if(error) return notif('Erreur: '+error.message,'error');
+  // Log pour PDG (responsables uniquement)
+  if(currentUser.role==='responsable' && ancien){
+    const changes=[];
+    if(nom!==ancien.nom) changes.push(`Nom: "${ancien.nom}" → "${nom}"`);
+    if(poste!==(ancien.poste||'')) changes.push(`Poste: "${ancien.poste||'-'}" → "${poste}"`);
+    if(tel!==(ancien.telephone||'')) changes.push(`Tél: "${ancien.telephone||'-'}" → "${tel}"`);
+    if(adresse!==(ancien.adresse||'')) changes.push(`Adresse: "${ancien.adresse||'-'}" → "${adresse}"`);
+    if(changes.length>0){
+      await sb.from('notifs_pdg').insert({
+        type:'employe_modifie',
+        boutique_id:currentBoutique.id,
+        boutique_nom:currentBoutique.nom,
+        auteur:currentUser.boutiques?.nom||'Responsable',
+        message:`Employé modifié — "${nom}" : ${changes.join(' | ')}`,
+        details:JSON.stringify({ancien:{nom:ancien.nom,poste:ancien.poste,telephone:ancien.telephone,adresse:ancien.adresse},nouveau:{nom,poste,telephone:tel,adresse}}),
+        lu:false
+      });
+    }
+  }
+  document.querySelector('.modal-overlay').remove();
+  notif('Employé modifié ✓','success');
+  await renderEmployes();
+}
+
+// ===================== EMPLOYES GLOBAL (PDG + Superviseur) =====================
+async function showEmployesGlobal() {
+  currentView='employes_global'; currentBoutique=null;
+  document.getElementById('topbar-title').textContent='Employés — Toutes les boutiques';
+  document.getElementById('topbar-boutique').textContent='Vue globale';
+  document.getElementById('tabs').innerHTML='';
+  renderSidebar();
+  const isSuperviseur=currentUser.role==='superviseur';
+  const rows = await Promise.all(boutiques.map(async b=>{
+    const {data}=await sb.from('employes').select('*').eq('boutique_id',b.id).order('nom');
+    return {b,employes:data||[]};
+  }));
+  document.getElementById('content').innerHTML = `
+    ${isSuperviseur?`<div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+      <button class="btn btn-ghost" onclick="showEmployesGlobal()">🔄 Actualiser</button>
+    </div>`:''}
+    ${rows.map(({b,employes})=>`
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <div style="width:10px;height:10px;border-radius:50%;background:${b.couleur}"></div>
+        <div style="font-size:14px;font-weight:700">${b.nom}</div>
+        <span class="badge badge-accent">${employes.length} employés</span>
+      </div>
+      ${employes.length===0?'<div style="color:var(--text2);font-size:13px">Aucun employé</div>':`
+      <div class="table-wrap"><table>
+        <thead><tr><th>Nom</th><th>Poste</th><th>Téléphone</th><th>Adresse</th><th>Contact urgence</th>${!isSuperviseur?'<th>💰 Salaire</th>':''}<th>Statut</th></tr></thead>
+        <tbody>${employes.map(e=>`<tr>
+          <td style="font-weight:600">${e.nom}</td>
+          <td>${e.poste||'-'}</td>
+          <td>${e.telephone||'-'}</td>
+          <td>${e.adresse||'-'}</td>
+          <td>${e.urgence_nom?e.urgence_nom+' — '+e.urgence_tel:'-'}</td>
+          ${!isSuperviseur?`<td style="font-weight:600;color:var(--amber)">${e.salaire?fmt(e.salaire)+' FCFA':'-'}</td>`:''}
+          <td><span class="badge ${e.actif?'badge-green':'badge-gray'}">${e.actif?'Actif':'Inactif'}</span></td>
+        </tr>`).join('')}</tbody>
+      </table></div>`}
+    </div>`).join('')}`;
+}
+
+// ===================== BESOINS =====================
+async function renderBesoins() {
+  const {data}=await sb.from('besoins').select('*').eq('boutique_id',currentBoutique.id).order('urgence').order('created_at',{ascending:false});
+  document.getElementById('content').innerHTML=`
+    <div class="card">
+      <div class="card-title">Ajouter un besoin</div>
+      <div class="form-row">
+        <div><label class="inp-label">Article</label><input class="inp" id="bes-art" placeholder="Ex: Sacs plastiques..."></div>
+        <div><label class="inp-label">Quantité</label><input class="inp" id="bes-qte" type="number" value="1"></div>
+        <div><label class="inp-label">Unité</label>
+          <select class="inp" id="bes-unit"><option>unité</option><option>paire</option><option>carton</option><option>kg</option><option>litre</option><option>sac</option></select>
+        </div>
+        <div><label class="inp-label">Urgence</label>
+          <select class="inp" id="bes-urg"><option value="haute">🔴 Haute</option><option value="moyenne" selected>🟡 Moyenne</option><option value="basse">🟢 Basse</option></select>
+        </div>
+      </div>
+      <button class="btn btn-accent" onclick="addBesoin()">+ Ajouter</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Liste des besoins (${(data||[]).filter(b=>!b.recu).length} en attente)</div>
+      ${(data||[]).length===0?'<div class="empty-state"><p>Aucun besoin enregistré</p></div>':`
+      <div class="table-wrap"><table>
+        <thead><tr><th>Article</th><th>Quantité</th><th>Urgence</th><th>Statut</th><th>Actions</th></tr></thead>
+        <tbody>${(data||[]).map(b=>`<tr>
+          <td style="font-weight:600;${b.recu?'text-decoration:line-through;color:var(--text2)':''}">${b.article}</td>
+          <td>${b.quantite} ${b.unite}</td>
+          <td><span class="badge ${b.urgence==='haute'?'badge-red':b.urgence==='moyenne'?'badge-amber':'badge-green'}">${b.urgence}</span></td>
+          <td><span class="badge ${b.recu?'badge-green':'badge-gray'}">${b.recu?'Reçu':'En attente'}</span></td>
+          <td style="display:flex;gap:4px">
+            ${!b.recu?`<button class="btn btn-green btn-sm" onclick="recuBesoin('${b.id}')">✓ Reçu</button>`:''}
+            <button class="btn btn-red btn-sm" onclick="delBesoin('${b.id}')">✕</button>
+          </td>
+        </tr>`).join('')}</tbody>
+      </table></div>`}
+    </div>`;
+}
+
+async function addBesoin() {
+  const art=document.getElementById('bes-art').value.trim();
+  const qte=parseInt(document.getElementById('bes-qte').value)||1;
+  const unite=document.getElementById('bes-unit').value;
+  const urgence=document.getElementById('bes-urg').value;
+  if(!art) return notif("Entrez le nom de l'article",'error');
+  await sb.from('besoins').insert({boutique_id:currentBoutique.id,article:art,quantite:qte,unite,urgence});
+  notif('Besoin ajouté ✓','success'); renderBesoins();
+}
+
+async function recuBesoin(id) {
+  await sb.from('besoins').update({recu:true}).eq('id',id); renderBesoins();
+}
+
+async function delBesoin(id) {
+  if(!confirm('Supprimer ce besoin ?')) return;
+  await sb.from('besoins').delete().eq('id',id); renderBesoins();
+}
+
+// ===================== CALENDRIER =====================
+let calYear=new Date().getFullYear(), calMonth=new Date().getMonth();
+
+async function renderCalendrier() {
+  document.getElementById('content').innerHTML=`<div id="cal-wrap"></div>`;
+  await drawCal();
+}
+
+async function drawCal() {
+  const firstDay=new Date(calYear,calMonth,1);
+  const lastDay=new Date(calYear,calMonth+1,0);
+  const startDate=new Date(firstDay); startDate.setDate(startDate.getDate()-((startDate.getDay()+6)%7));
+  const monthStr=`${calYear}-${String(calMonth+1).padStart(2,'0')}`;
+  const {data:events}=await sb.from('calendrier').select('*').eq('boutique_id',currentBoutique.id).gte('date',monthStr+'-01').lte('date',monthStr+'-31');
+  const evByDate={};
+  (events||[]).forEach(e=>{if(!evByDate[e.date])evByDate[e.date]=[];evByDate[e.date].push(e);});
+  const today=new Date().toISOString().split('T')[0];
+  const moisNoms=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  let html=`
+    <div class="card">
+      <div class="cal-nav">
+        <button class="btn btn-ghost btn-sm" onclick="calNav(-1)">← Précédent</button>
+        <div style="font-size:16px;font-weight:700">${moisNoms[calMonth]} ${calYear}</div>
+        <button class="btn btn-ghost btn-sm" onclick="calNav(1)">Suivant →</button>
+      </div>
+      <div class="cal-header">${['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'].map(d=>`<div class="cal-header-day">${d}</div>`).join('')}</div>
+      <div class="cal-grid">`;
+  let d=new Date(startDate);
+  for(let i=0;i<42;i++){
+    const ds=d.toISOString().split('T')[0];
+    const isToday=ds===today;
+    const isOther=d.getMonth()!==calMonth;
+    const evs=evByDate[ds]||[];
+    html+=`<div class="cal-day ${isToday?'today':''} ${isOther?'other-month':''}" onclick="addCalEvent('${ds}')">
+      <div class="cal-day-num">${d.getDate()}</div>
+      ${evs.slice(0,2).map(e=>`<div class="cal-event" title="${e.titre}" onclick="event.stopPropagation();viewCalEvent('${e.id}','${e.titre.replace(/'/g,"\\'")}','${(e.description||'').replace(/'/g,"\\'")}','${e.date}','${e.heure||''}','${e.type}')">${e.titre}</div>`).join('')}
+      ${evs.length>2?`<div style="font-size:9px;color:var(--text2)">+${evs.length-2} autres</div>`:''}
+    </div>`;
+    d.setDate(d.getDate()+1);
+  }
+  html+=`</div></div>`;
+  document.getElementById('cal-wrap').innerHTML=html;
+}
+
+function calNav(dir) { calMonth+=dir; if(calMonth>11){calMonth=0;calYear++;}if(calMonth<0){calMonth=11;calYear--;} drawCal(); }
+
+function addCalEvent(date) {
+  const o=document.createElement('div'); o.className='modal-overlay';
+  o.innerHTML=`<div class="modal"><div class="modal-title">📆 Ajouter un événement — ${date}</div>
+    <div class="form-row">
+      <div><label class="inp-label">Titre</label><input class="inp" id="cal-titre" placeholder="Ex: Inventaire, Réunion..."></div>
+      <div><label class="inp-label">Heure</label><input class="inp" id="cal-heure" type="time"></div>
+      <div><label class="inp-label">Type</label>
+        <select class="inp" id="cal-type"><option value="evenement">Événement</option><option value="rappel">Rappel</option><option value="livraison">Livraison</option><option value="paiement">Paiement</option></select>
+      </div>
+    </div>
+    <div><label class="inp-label">Description</label><textarea class="inp" id="cal-desc" rows="3" placeholder="Détails..."></textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove()">Annuler</button>
+      <button class="btn btn-accent" onclick="saveCalEvent('${date}')">Enregistrer</button>
+    </div></div>`;
+  document.body.appendChild(o);
+}
+
+async function saveCalEvent(date) {
+  const titre=document.getElementById('cal-titre').value.trim();
+  const heure=document.getElementById('cal-heure').value;
+  const type=document.getElementById('cal-type').value;
+  const desc=document.getElementById('cal-desc').value.trim();
+  if(!titre) return notif('Entrez un titre','error');
+  await sb.from('calendrier').insert({boutique_id:currentBoutique.id,titre,description:desc,date,heure,type});
+  document.querySelector('.modal-overlay').remove();
+  notif('Événement ajouté ✓','success'); drawCal();
+}
+
+function viewCalEvent(id,titre,desc,date,heure,type) {
+  const o=document.createElement('div'); o.className='modal-overlay';
+  o.innerHTML=`<div class="modal"><div class="modal-title">${titre}</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:12px">${date} ${heure?'à '+heure:''} — <span class="badge badge-accent">${type}</span></div>
+    <div style="font-size:14px">${desc||'Aucune description'}</div>
+    <div class="modal-actions">
+      <button class="btn btn-red" onclick="delCalEvent('${id}')">🗑 Supprimer</button>
+      <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove()">Fermer</button>
+    </div></div>`;
+  document.body.appendChild(o);
+}
+
+async function delCalEvent(id) {
+  if(!confirm('Supprimer cet événement ?')) return;
+  await sb.from('calendrier').delete().eq('id',id);
+  document.querySelector('.modal-overlay').remove();
+  notif('Événement supprimé','success'); drawCal();
+}
+
+// ===================== VUE GLOBALE =====================
+async function showGlobal() {
+  currentView='global'; currentBoutique=null;
+  document.getElementById('topbar-title').textContent='Vue globale';
+  document.getElementById('topbar-boutique').textContent='Toutes les boutiques';
+  document.getElementById('tabs').innerHTML='';
+  renderSidebar();
+  const today=new Date().toISOString().split('T')[0];
+  const now=new Date();
+  const monthStart=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
+
+  document.getElementById('content').innerHTML=`
+    <div class="card">
+      <div class="card-title">Filtrer la vue globale</div>
+      <div class="form-row">
+        <div><label class="inp-label">Date spécifique</label><input class="inp" id="global-date" type="date" value="${today}"></div>
+        <div><label class="inp-label">Mois</label><input class="inp" id="global-mois" type="month" value="${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}"></div>
+        <div style="display:flex;align-items:flex-end;gap:8px">
+          <button class="btn btn-accent" onclick="loadGlobalData()">🔍 Afficher</button>
+        </div>
+      </div>
+    </div>
+    <div id="global-result"></div>`;
+
+  await loadGlobalData();
+}
+
+async function loadGlobalData() {
+  const dateVal=document.getElementById('global-date')?.value;
+  const moisVal=document.getElementById('global-mois')?.value;
+  const el=document.getElementById('global-result');
+  if(!el) return;
+  el.innerHTML='<div class="empty-state"><p>Chargement...</p></div>';
+
+  // Vue par jour
+  const rows=await Promise.all(boutiques.map(async b=>{
+    const [{data:rec},{data:dep}]=await Promise.all([
+      sb.from('recettes').select('montant').eq('boutique_id',b.id).eq('date',dateVal),
+      sb.from('depenses').select('montant').eq('boutique_id',b.id).eq('date',dateVal),
+    ]);
+    const r=(rec||[]).reduce((s,x)=>s+parseFloat(x.montant),0);
+    const d=(dep||[]).reduce((s,x)=>s+parseFloat(x.montant),0);
+    return {b,r,d};
+  }));
+
+  // Vue par mois
+  const moisRows=await Promise.all(boutiques.map(async b=>{
+    const moisStart=moisVal+'-01';
+    const moisEnd=moisVal+'-31';
+    const [{data:rec},{data:dep}]=await Promise.all([
+      sb.from('recettes').select('montant').eq('boutique_id',b.id).gte('date',moisStart).lte('date',moisEnd),
+      sb.from('depenses').select('montant').eq('boutique_id',b.id).gte('date',moisStart).lte('date',moisEnd),
+    ]);
+    const r=(rec||[]).reduce((s,x)=>s+parseFloat(x.montant),0);
+    const d=(dep||[]).reduce((s,x)=>s+parseFloat(x.montant),0);
+    return {b,r,d};
+  }));
+
+  const totalR=rows.reduce((s,x)=>s+x.r,0);
+  const totalD=rows.reduce((s,x)=>s+x.d,0);
+  const totalRM=moisRows.reduce((s,x)=>s+x.r,0);
+  const totalDM=moisRows.reduce((s,x)=>s+x.d,0);
+
+  el.innerHTML=`
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">Recettes (${dateVal})</div><div class="stat-value green">${fmt(totalR)}</div><div class="stat-sub">FCFA</div></div>
+      <div class="stat-card"><div class="stat-label">Dépenses (${dateVal})</div><div class="stat-value red">${fmt(totalD)}</div><div class="stat-sub">FCFA</div></div>
+      <div class="stat-card"><div class="stat-label">Solde du jour</div><div class="stat-value ${totalR-totalD>=0?'green':'red'}">${fmt(totalR-totalD)}</div><div class="stat-sub">FCFA</div></div>
+      <div class="stat-card"><div class="stat-label">Recettes mois (${moisVal})</div><div class="stat-value green">${fmt(totalRM)}</div><div class="stat-sub">FCFA</div></div>
+      <div class="stat-card"><div class="stat-label">Dépenses mois</div><div class="stat-value red">${fmt(totalDM)}</div><div class="stat-sub">FCFA</div></div>
+      <div class="stat-card"><div class="stat-label">Solde mensuel</div><div class="stat-value ${totalRM-totalDM>=0?'green':'red'}">${fmt(totalRM-totalDM)}</div><div class="stat-sub">FCFA</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Résumé par boutique — ${dateVal}</div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Boutique</th><th>Recettes</th><th>Dépenses</th><th>Solde jour</th><th>Recettes mois</th><th>Solde mois</th></tr></thead>
+        <tbody>${rows.map(({b,r,d},i)=>{
+          const rm=moisRows[i].r, dm=moisRows[i].d;
+          return `<tr class="global-row">
+            <td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${b.couleur};margin-right:8px"></span>${b.nom}</td>
+            <td class="green">${fmt(r)} FCFA</td>
+            <td class="red">${fmt(d)} FCFA</td>
+            <td class="${r-d>=0?'green':'red'}" style="font-weight:700">${fmt(r-d)} FCFA</td>
+            <td class="green">${fmt(rm)} FCFA</td>
+            <td class="${rm-dm>=0?'green':'red'}" style="font-weight:700">${fmt(rm-dm)} FCFA</td>
+          </tr>`;
+        }).join('')}
+        <tr style="font-weight:800;border-top:2px solid var(--border)">
+          <td>TOTAL</td>
+          <td class="green">${fmt(totalR)} FCFA</td>
+          <td class="red">${fmt(totalD)} FCFA</td>
+          <td class="${totalR-totalD>=0?'green':'red'}">${fmt(totalR-totalD)} FCFA</td>
+          <td class="green">${fmt(totalRM)} FCFA</td>
+          <td class="${totalRM-totalDM>=0?'green':'red'}">${fmt(totalRM-totalDM)} FCFA</td>
+        </tr>
+        </tbody>
+      </table></div>
+    </div>`;
+}
+
+// Canal fixe pour la conversation PDG ↔ Superviseur
+const CANAL_SUPERVISEUR = '00000000-0000-0000-0000-000000000001';
+// Canaux de groupe : UUID déterministe par boutique
+let canalGroupeMap = {}; // boutiqueId -> UUID canal groupe
+function getCanalGroupe(boutiqueId){
+  if(!canalGroupeMap[boutiqueId]){
+    // Utilise les 8 premiers chars du boutique_id pour créer un UUID unique de groupe
+    const clean = boutiqueId.replace(/-/g,'');
+    canalGroupeMap[boutiqueId] = 'ffffffff-ffff-ffff-'+clean.substring(0,4)+'-'+clean.substring(4,16);
+  }
+  return canalGroupeMap[boutiqueId];
+}
+function isGroupeCanal(id){ return typeof id==='string' && id.startsWith('ffffffff-ffff-ffff-'); }
+
+async function showChat() {
+  currentView='chat'; currentBoutique=null;
+  document.getElementById('topbar-title').textContent='Messages';
+  document.getElementById('topbar-boutique').textContent='Zone de conversation';
+  document.getElementById('tabs').innerHTML='';
+  renderSidebar();
+  if(chatInterval) clearInterval(chatInterval);
+  const isSuperviseur=currentUser.role==='superviseur';
+  const isPdg=currentUser.role==='pdg';
+  if(isSuperviseur){
+    // Superviseur : commence sur le canal privé PDG
+    chatBoutiqueId = CANAL_SUPERVISEUR;
+  } else if(isPdg){
+    // PDG : commence sur le groupe de la première boutique
+    chatBoutiqueId = boutiques.length>0 ? getCanalGroupe(boutiques[0].id) : null;
+  } else {
+    // Responsable : commence sur le groupe de sa boutique
+    chatBoutiqueId = currentUser.boutique_id ? getCanalGroupe(currentUser.boutique_id) : currentUser.boutique_id;
+  }
+  renderChat();
+  chatInterval=setInterval(()=>{ if(currentView==='chat'){ loadMessages(); checkTyping(); } },3000);
+}
+
+async function renderChat() {
+  const isPdg=currentUser.role==='pdg';
+  const isSuperviseur=currentUser.role==='superviseur';
+  const isResp=currentUser.role==='responsable';
+
+  // Compter les non lus par canal
+  const unread={};
+  if(isPdg){
+    // Canaux normaux (boutique_id)
+    const {data:u1}=await sb.from('messages').select('boutique_id').eq('lu_pdg',false).neq('expediteur_id',currentUser.id).not('boutique_id','is',null);
+    (u1||[]).forEach(m=>{ unread[m.boutique_id]=(unread[m.boutique_id]||0)+1; });
+    // Canaux spéciaux (canal_id)
+    const {data:u2}=await sb.from('messages').select('canal_id').eq('lu_pdg',false).neq('expediteur_id',currentUser.id).not('canal_id','is',null);
+    (u2||[]).forEach(m=>{ unread[m.canal_id]=(unread[m.canal_id]||0)+1; });
+    // Canal superviseur privé (lu_responsable=false côté superviseur, lu_pdg=false côté PDG)
+    const {data:u3}=await sb.from('messages').select('canal_id').eq('canal_id',CANAL_SUPERVISEUR).eq('lu_pdg',false).neq('expediteur_id',currentUser.id);
+    (u3||[]).forEach(m=>{ unread[m.canal_id]=(unread[m.canal_id]||0)+1; });
+  } else if(isSuperviseur){
+    // Canal privé PDG→Superviseur (lu_responsable=false)
+    const {data:u1}=await sb.from('messages').select('canal_id').eq('canal_id',CANAL_SUPERVISEUR).eq('lu_responsable',false).neq('expediteur_id',currentUser.id);
+    (u1||[]).forEach(m=>{ unread[m.canal_id]=(unread[m.canal_id]||0)+1; });
+    // Groupes boutiques (lu_pdg=false)
+    const {data:u2}=await sb.from('messages').select('canal_id').eq('lu_pdg',false).neq('expediteur_id',currentUser.id).not('canal_id','is',null).neq('canal_id',CANAL_SUPERVISEUR);
+    (u2||[]).forEach(m=>{ unread[m.canal_id]=(unread[m.canal_id]||0)+1; });
+  } else {
+    const bid=currentUser.boutique_id;
+    const grp=getCanalGroupe(bid);
+    // Canal privé (boutique_id)
+    const {data:u1}=await sb.from('messages').select('boutique_id').eq('boutique_id',bid).eq('lu_responsable',false).neq('expediteur_id',currentUser.id);
+    (u1||[]).forEach(m=>{ unread[m.boutique_id]=(unread[m.boutique_id]||0)+1; });
+    // Canal groupe (canal_id)
+    const {data:u2}=await sb.from('messages').select('canal_id').eq('canal_id',grp).eq('lu_responsable',false).neq('expediteur_id',currentUser.id);
+    (u2||[]).forEach(m=>{ unread[m.canal_id]=(unread[m.canal_id]||0)+1; });
+  }
+
+  function badge(cnt){ return cnt>0?`<span style="background:var(--red);color:#fff;font-size:10px;font-weight:700;border-radius:10px;padding:1px 6px;margin-left:5px">${cnt}</span>`:''; }
+  function tab(id,label,icon=''){
+    const cnt=unread[id]||0;
+    return `<div class="chat-boutique-tab ${chatBoutiqueId===id?'active':''}" onclick="switchChatBoutique('${id}')">${icon}${label}${badge(cnt)}</div>`;
+  }
+
+  let chatTabs='';
+
+  if(isPdg){
+    // PDG : pour chaque boutique → onglet GROUPE + onglet PRIVÉ, puis onglet privé Superviseur
+    let tabs='';
+    boutiques.forEach(b=>{
+      const grp=getCanalGroupe(b.id);
+      tabs+=tab(grp, b.nom, '👥 ');
+      tabs+=tab(b.id, b.nom, '🔒 ');
+    });
+    tabs+=tab(CANAL_SUPERVISEUR,'Superviseur','👁 ');
+    chatTabs=`<div class="chat-boutique-tabs" style="flex-wrap:wrap">${tabs}</div>
+      <div style="padding:6px 12px 0;font-size:11px;color:var(--text2)">👥 Groupe (3 personnes) &nbsp;|&nbsp; 🔒 Privé avec responsable &nbsp;|&nbsp; 👁 Privé Superviseur</div>`;
+
+  } else if(isSuperviseur){
+    // Superviseur : onglet privé PDG + pour chaque boutique → onglet groupe
+    let tabs=tab(CANAL_SUPERVISEUR,'PDG','💬 ');
+    boutiques.forEach(b=>{
+      const grp=getCanalGroupe(b.id);
+      tabs+=tab(grp, b.nom, '👥 ');
+    });
+    chatTabs=`<div class="chat-boutique-tabs" style="flex-wrap:wrap">${tabs}</div>
+      <div style="padding:6px 12px 0;font-size:11px;color:var(--text2)">💬 Privé PDG &nbsp;|&nbsp; 👥 Groupe boutique (PDG + Superviseur + Responsable)</div>`;
+
+  } else {
+    // Responsable : onglet groupe SA boutique + onglet privé PDG
+    const bid=currentUser.boutique_id;
+    const grp=getCanalGroupe(bid);
+    const tabs=tab(grp,'Groupe boutique','👥 ')+tab(bid,'PDG (privé)','🔒 ');
+    chatTabs=`<div class="chat-boutique-tabs">${tabs}</div>
+      <div style="padding:6px 12px 0;font-size:11px;color:var(--text2)">👥 Groupe (PDG + Superviseur + vous) &nbsp;|&nbsp; 🔒 Privé avec le PDG</div>`;
+  }
+
+  document.getElementById('content').innerHTML=`
+    <div class="card" style="padding:0;overflow:hidden">
+      ${chatTabs}
+      <div class="chat-container">
+        <div class="chat-messages" id="chat-msgs"></div>
+        <div class="chat-input-row">
+          <input class="inp" id="chat-inp" placeholder="Écrivez un message..." style="flex:1" oninput="onTyping()" onkeydown="if(event.key==='Enter')sendMsg()">
+          <button class="btn btn-accent" onclick="sendMsg()">Envoyer</button>
+        </div>
+      </div>
+    </div>`;
+  await loadMessages();
+}
+
+function switchChatBoutique(bid) {
+  chatBoutiqueId=bid; renderChat();
+}
+
+async function loadMessages() {
+  if(!chatBoutiqueId) return;
+  const estSpecial = isGroupeCanal(chatBoutiqueId) || chatBoutiqueId===CANAL_SUPERVISEUR;
+  let query;
+  if(estSpecial){
+    query = sb.from('messages').select('*').eq('canal_id',chatBoutiqueId).order('created_at',{ascending:true}).limit(100);
+  } else {
+    query = sb.from('messages').select('*').eq('boutique_id',chatBoutiqueId).is('canal_id',null).order('created_at',{ascending:true}).limit(100);
+  }
+  const {data}=await query;
+  const el=document.getElementById('chat-msgs');
+  if(!el) return;
+  el.innerHTML=(data||[]).map(m=>{
+    const isMoi=m.expediteur_id===currentUser.id;
+    const time=new Date(m.created_at).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+    // Coches lecture
+    let check='';
+    if(isMoi){
+      const estLu = currentUser.role==='pdg' ? m.lu_responsable : m.lu_pdg;
+      check = estLu
+        ? `<span class="msg-check lu" title="Lu">✓✓</span>`
+        : `<span class="msg-check envoye" title="Envoyé">✓</span>`;
+    }
+    // Bouton supprimer (seulement sur ses propres messages)
+    const delBtn = isMoi ? `<button onclick="delMsg('${m.id}')" title="Supprimer" style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.4);font-size:13px;padding:0 0 0 6px;line-height:1;transition:color 0.15s" onmouseover="this.style.color='#f04f5e'" onmouseout="this.style.color='rgba(255,255,255,0.4)'">🗑</button>` : '';
+    return `<div class="chat-msg ${isMoi?'moi':'autre'}" style="position:relative">
+      ${!isMoi?`<div style="font-size:10px;font-weight:700;color:var(--accent2);margin-bottom:3px">${m.expediteur_nom}</div>`:''}
+      <div style="display:flex;align-items:flex-end;gap:4px">
+        <span style="flex:1">${m.contenu}</span>
+        ${delBtn}
+      </div>
+      <div class="chat-msg-info" style="display:flex;align-items:center;justify-content:flex-end;gap:2px">${time}${check}</div>
+    </div>`;
+  }).join('');
+  // Indicateur typing
+  const typingEl=document.getElementById('typing-indicator');
+  if(typingEl) el.appendChild(typingEl);
+  el.scrollTop=el.scrollHeight;
+  // Marquer comme lu
+  const estGroupe=isGroupeCanal(chatBoutiqueId);
+  const estCanalSup=chatBoutiqueId===CANAL_SUPERVISEUR;
+  const col = estSpecial ? 'canal_id' : 'boutique_id';
+  const val = chatBoutiqueId;
+  if(currentUser.role==='pdg'){
+    await sb.from('messages').update({lu_pdg:true}).eq(col,val).eq('lu_pdg',false).neq('expediteur_id',currentUser.id);
+  } else if(currentUser.role==='superviseur'){
+    if(estCanalSup){
+      await sb.from('messages').update({lu_responsable:true}).eq('canal_id',CANAL_SUPERVISEUR).eq('lu_responsable',false).neq('expediteur_id',currentUser.id);
+    } else {
+      await sb.from('messages').update({lu_pdg:true}).eq(col,val).eq('lu_pdg',false).neq('expediteur_id',currentUser.id);
+    }
+  } else {
+    await sb.from('messages').update({lu_responsable:true}).eq(col,val).eq('lu_responsable',false).neq('expediteur_id',currentUser.id);
+  }
+  const badge=document.getElementById('chat-badge');
+  if(badge){badge.style.display='none';badge.textContent='0';}
+}
+
+async function sendMsg() {
+  const inp=document.getElementById('chat-inp');
+  const contenu=inp?.value.trim();
+  if(!contenu||!chatBoutiqueId) return;
+  inp.value='';
+  clearTyping();
+  const nom=currentUser.role==='pdg'?'PDG':currentUser.role==='superviseur'?'Superviseur':(currentUser.boutiques?.nom||'Responsable');
+  const estGroupe=isGroupeCanal(chatBoutiqueId);
+  const estCanalSup=chatBoutiqueId===CANAL_SUPERVISEUR;
+
+  let lu_pdg, lu_responsable, insertData;
+
+  if(estGroupe){
+    lu_pdg = currentUser.role==='pdg' || currentUser.role==='superviseur';
+    lu_responsable = currentUser.role==='responsable';
+    insertData = {canal_id:chatBoutiqueId, boutique_id:null, expediteur_id:currentUser.id, expediteur_nom:nom, contenu, lu_pdg, lu_responsable};
+  } else if(estCanalSup){
+    lu_pdg = currentUser.role==='pdg';
+    lu_responsable = currentUser.role==='superviseur';
+    insertData = {canal_id:chatBoutiqueId, boutique_id:null, expediteur_id:currentUser.id, expediteur_nom:nom, contenu, lu_pdg, lu_responsable};
+  } else {
+    lu_pdg = currentUser.role==='pdg';
+    lu_responsable = currentUser.role==='responsable';
+    insertData = {boutique_id:chatBoutiqueId, canal_id:null, expediteur_id:currentUser.id, expediteur_nom:nom, contenu, lu_pdg, lu_responsable};
+  }
+  const {error}=await sb.from('messages').insert(insertData);
+  if(error){ console.error('sendMsg error',error); notif('Erreur envoi message','error'); return; }
+  await loadMessages();
+}
+
+async function delMsg(id) {
+  if(!confirm('Supprimer ce message ?')) return;
+  await sb.from('messages').delete().eq('id',id);
+  await loadMessages();
+}
+
+let typingTimer=null;
+async function onTyping() {
+  if(!chatBoutiqueId) return;
+  const nom=currentUser.role==='pdg'?'PDG':(currentUser.boutiques?.nom||'Responsable');
+  await sb.from('typing_status').upsert({boutique_id:chatBoutiqueId,user_id:currentUser.id,nom,updated_at:new Date().toISOString()},{onConflict:'boutique_id,user_id'});
+  clearTimeout(typingTimer);
+  typingTimer=setTimeout(clearTyping,3000);
+}
+
+async function clearTyping() {
+  if(!chatBoutiqueId||!currentUser) return;
+  await sb.from('typing_status').delete().eq('boutique_id',chatBoutiqueId).eq('user_id',currentUser.id);
+}
+
+async function checkTyping() {
+  if(!chatBoutiqueId||currentView!=='chat') return;
+  const since=new Date(Date.now()-4000).toISOString();
+  const {data}=await sb.from('typing_status').select('*').eq('boutique_id',chatBoutiqueId).neq('user_id',currentUser.id).gte('updated_at',since);
+  const el=document.getElementById('chat-msgs');
+  if(!el) return;
+  let tipEl=document.getElementById('typing-indicator');
+  if(data&&data.length>0){
+    const noms=data.map(x=>x.nom).join(', ');
+    if(!tipEl){
+      tipEl=document.createElement('div');
+      tipEl.id='typing-indicator';
+      tipEl.className='typing-indicator';
+      el.appendChild(tipEl);
+    }
+    tipEl.innerHTML=`<div class="typing-dots"><span></span><span></span><span></span></div> ${noms} est en train d'écrire...`;
+    el.scrollTop=el.scrollHeight;
+  } else {
+    if(tipEl) tipEl.remove();
+  }
+}
+
+// ===================== NOTIFICATIONS BESOINS =====================
+async function startNotifCheck() {
+  await checkBesoinsNotif();
+  notifInterval=setInterval(checkBesoinsNotif,5000);
+}
+
+async function checkBesoinsNotif() {
+  if(!currentUser) return;
+  const badge=document.getElementById('chat-badge');
+  let unread=0;
+  if(currentUser.role==='pdg'){
+    // Tous canaux normaux non lus
+    const {data:m1}=await sb.from('messages').select('id').eq('lu_pdg',false).neq('expediteur_id',currentUser.id).not('boutique_id','is',null);
+    // Canaux spéciaux (groupe + superviseur) non lus
+    const {data:m2}=await sb.from('messages').select('id').eq('lu_pdg',false).neq('expediteur_id',currentUser.id).not('canal_id','is',null);
+    unread=((m1||[]).length)+((m2||[]).length);
+    // Badge notifs PDG
+    const {data:notifsData}=await sb.from('notifs_pdg').select('id').eq('lu',false);
+    const notifsBadge=document.getElementById('notifs-pdg-badge');
+    if(notifsBadge){
+      const cnt=(notifsData||[]).length;
+      notifsBadge.style.display=cnt>0?'inline':'none';
+      notifsBadge.textContent=cnt;
+    }
+  } else if(currentUser.role==='superviseur'){
+    // Superviseur : messages non lus dans canal privé PDG (lu_responsable=false) + groupes (lu_pdg=false)
+    const {data:m1}=await sb.from('messages').select('id').eq('boutique_id',CANAL_SUPERVISEUR).eq('lu_responsable',false).neq('expediteur_id',currentUser.id);
+    const {data:m2}=await sb.from('messages').select('id').eq('lu_pdg',false).neq('expediteur_id',currentUser.id).neq('boutique_id',CANAL_SUPERVISEUR);
+    unread=((m1||[]).length)+((m2||[]).length);
+  } else {
+    const boutiqueId=currentUser.boutique_id||currentUser.boutiques?.id;
+    if(boutiqueId){
+      // Responsable : canal privé + canal groupe
+      const grp=getCanalGroupe(boutiqueId);
+      const {data:msgs}=await sb.from('messages').select('id').eq('lu_responsable',false).neq('expediteur_id',currentUser.id).in('boutique_id',[boutiqueId,grp]);
+      unread=(msgs||[]).length;
+    }
+  }
+  if(badge){
+    if(unread>0){
+      badge.style.display='inline';
+      badge.textContent=unread;
+    } else {
+      badge.style.display='none';
+    }
+  }
+  if(currentUser.role==='pdg'){
+    const {data}=await sb.from('besoins').select('id,article,urgence').eq('recu',false).eq('urgence','haute').order('created_at',{ascending:false});
+    if(data&&data.length>0){
+      const stored=localStorage.getItem('last_besoin_notif');
+      const lastId=data[0].id;
+      if(stored!==lastId){
+        localStorage.setItem('last_besoin_notif',lastId);
+        notif(`🔴 Nouveau besoin urgent : ${data[0].article}`,'error');
+      }
+    }
+    // Notif toast pour nouvelles modifs
+    const {data:newNotifs}=await sb.from('notifs_pdg').select('id,message').eq('lu',false).order('created_at',{ascending:false}).limit(1);
+    if(newNotifs&&newNotifs.length>0){
+      const stored=localStorage.getItem('last_pdg_notif');
+      if(stored!==newNotifs[0].id){
+        localStorage.setItem('last_pdg_notif',newNotifs[0].id);
+        notif(`🔔 ${newNotifs[0].message}`,'error');
+      }
+    }
+  }
+}
+
+// ===================== COMPTES =====================
+async function showComptes() {
+  currentView='comptes';
+  document.getElementById('topbar-title').textContent='Gestion des comptes';
+  document.getElementById('topbar-boutique').textContent='';
+  document.getElementById('tabs').innerHTML='';
+  const {data}=await sb.from('comptes').select('*,boutiques(nom)').order('role');
+  document.getElementById('content').innerHTML=`
+    <div class="card">
+      <div class="card-title">Comptes utilisateurs</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:16px">Modifiez l'identifiant et/ou le mot de passe puis cliquez sur 💾 Sauver</div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Rôle</th><th>Boutique</th><th>Identifiant</th><th>Mot de passe</th><th>Action</th></tr></thead>
+        <tbody>${(data||[]).map(c=>`<tr>
+          <td><span class="badge ${c.role==='pdg'?'badge-accent':c.role==='superviseur'?'badge-amber':'badge-green'}">${c.role}</span></td>
+          <td style="color:var(--text2)">${c.boutiques?.nom||'Toutes les boutiques'}</td>
+          <td><input class="inp" id="id-${c.id}" value="${c.identifiant}" style="width:130px"></td>
+          <td><input class="inp" id="pw-${c.id}" value="${c.mot_de_passe}" style="width:130px"></td>
+          <td style="display:flex;gap:4px">
+            <button class="btn btn-amber btn-sm" onclick="saveCompte('${c.id}')">💾 Sauver</button>
+            ${c.role!=='pdg'?`<button class="btn btn-red btn-sm" onclick="deleteCompte('${c.id}')">✕</button>`:''}
+          </td>
+        </tr>`).join('')}</tbody>
+      </table></div>
+    </div>
+    <div class="card">
+      <div class="card-title">➕ Créer un compte Superviseur</div>
+      <div class="form-row">
+        <div><label class="inp-label">Identifiant</label><input class="inp" id="sup-new-id" placeholder="Ex: superviseur"></div>
+        <div><label class="inp-label">Mot de passe</label><input class="inp" id="sup-new-pw" placeholder="Ex: suppass"></div>
+      </div>
+      <button class="btn btn-amber" onclick="createSuperviseur()">+ Créer Superviseur</button>
+    </div>`;
+}
+
+async function saveCompte(id) {
+  const newId=document.getElementById('id-'+id).value.trim();
+  const pw=document.getElementById('pw-'+id).value.trim();
+  if(!newId) return notif('Identifiant vide','error');
+  if(!pw) return notif('Mot de passe vide','error');
+  const {error}=await sb.from('comptes').update({identifiant:newId,mot_de_passe:pw}).eq('id',id);
+  if(error) return notif('Erreur : identifiant déjà utilisé ?','error');
+  notif('Compte modifié ✓','success'); showComptes();
+}
+
+async function deleteCompte(id) {
+  if(!confirm('Supprimer ce compte ?')) return;
+  await sb.from('comptes').delete().eq('id',id);
+  notif('Compte supprimé','success'); showComptes();
+}
+
+async function createSuperviseur() {
+  const id=document.getElementById('sup-new-id').value.trim();
+  const pw=document.getElementById('sup-new-pw').value.trim();
+  if(!id||!pw) return notif('Remplissez les deux champs','error');
+  const {error}=await sb.from('comptes').insert({identifiant:id,mot_de_passe:pw,role:'superviseur',boutique_id:null});
+  if(error) return notif('Erreur : identifiant déjà utilisé ?','error');
+  notif('Superviseur créé ✓','success'); showComptes();
+}
+
+// ===================== IMMOBILISATIONS =====================
+async function renderImmobilisations() {
+  const {data}=await sb.from('immobilisations').select('*').eq('boutique_id',currentBoutique.id).order('designation');
+  const isPdg=currentUser.role==='pdg';
+  const isSuperviseur=currentUser.role==='superviseur';
+  const canEdit=isPdg||isSuperviseur;
+  const canEditPrix=isPdg; // Seul le PDG peut voir/modifier le prix d'achat
+  document.getElementById('content').innerHTML=`
+    <div class="card">
+      ${canEdit?`<div class="card-title">Ajouter une immobilisation</div>
+      <div class="form-row">
+        <div><label class="inp-label">Désignation</label><input class="inp" id="immo-des" placeholder="Ex: Réfrigérateur, Meuble..."></div>
+        <div><label class="inp-label">Catégorie</label>
+          <select class="inp" id="immo-cat">
+            <option value="mobilier">Mobilier</option><option value="materiel">Matériel</option>
+            <option value="vehicule">Véhicule</option><option value="informatique">Informatique</option>
+            <option value="batiment">Bâtiment</option><option value="autre">Autre</option>
+          </select>
+        </div>
+        ${canEditPrix?`<div><label class="inp-label">Prix d'achat (FCFA) 🔒 PDG</label><input class="inp" id="immo-pa" type="number" placeholder="0"></div>`:''}
+        <div><label class="inp-label">Date acquisition</label><input class="inp" id="immo-date" type="date" value="${new Date().toISOString().split('T')[0]}"></div>
+        <div><label class="inp-label">Durée amortissement (mois)</label><input class="inp" id="immo-amort" type="number" placeholder="60"></div>
+        <div><label class="inp-label">État</label>
+          <select class="inp" id="immo-etat">
+            <option value="bon">Bon état</option><option value="moyen">État moyen</option><option value="mauvais">Mauvais état</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-accent" onclick="addImmobilisation()">+ Ajouter</button>`
+      :'<div style="color:var(--text2);font-size:13px">🔒 Consultation uniquement</div>'}
+    </div>
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div class="card-title" style="margin-bottom:0">Registre des immobilisations (${(data||[]).length})</div>
+        ${isSuperviseur?`<button class="btn btn-ghost btn-sm" onclick="renderImmobilisations()">🔄 Actualiser</button>`:''}
+      </div>
+      ${(data||[]).length===0?'<div class="empty-state"><p>Aucune immobilisation enregistrée</p></div>':`
+      <div class="table-wrap"><table>
+        <thead><tr><th>Désignation</th><th>Catégorie</th>${canEditPrix?'<th>Prix achat</th>':''}<th>Date achat</th><th>Amortissement</th><th>État</th>${canEdit?'<th>Actions</th>':''}</tr></thead>
+        <tbody>${(data||[]).map(im=>{
+          const moisEcoules=Math.floor((Date.now()-new Date(im.date_acquisition).getTime())/(1000*60*60*24*30));
+          const pct=im.duree_amortissement>0?Math.min(100,Math.round((moisEcoules/im.duree_amortissement)*100)):0;
+          return `<tr>
+            <td style="font-weight:600">${im.designation}</td>
+            <td><span class="badge badge-accent">${im.categorie}</span></td>
+            ${canEditPrix?`<td style="color:var(--amber);font-weight:600">${fmt(im.prix_achat||0)} FCFA</td>`:''}
+            <td style="color:var(--text2)">${im.date_acquisition||'-'}</td>
+            <td>
+              <div style="font-size:12px;color:var(--text2);margin-bottom:3px">${pct}% (${moisEcoules}/${im.duree_amortissement||'?'} mois)</div>
+              <div style="background:var(--bg3);border-radius:4px;height:6px;width:120px">
+                <div style="background:${pct>=100?'var(--red)':pct>60?'var(--amber)':'var(--green)'};height:6px;border-radius:4px;width:${pct}%"></div>
+              </div>
+            </td>
+            <td><span class="badge ${im.etat==='bon'?'badge-green':im.etat==='moyen'?'badge-amber':'badge-red'}">${im.etat||'bon'}</span></td>
+            ${canEdit?`<td style="display:flex;gap:4px">
+              <button class="btn btn-amber btn-sm" onclick="editImmo('${im.id}','${im.designation.replace(/'/g,"\\'")}','${im.categorie}',${im.prix_achat||0},'${im.date_acquisition}',${im.duree_amortissement||0},'${im.etat||'bon'}')">✏️</button>
+              ${isPdg?`<button class="btn btn-red btn-sm" onclick="delImmo('${im.id}')">✕</button>`:''}
+            </td>`:''}
+          </tr>`;
+        }).join('')}</tbody>
+      </table></div>`}
+    </div>`;
+}
+
+async function addImmobilisation() {
+  const des=document.getElementById('immo-des').value.trim();
+  const cat=document.getElementById('immo-cat').value;
+  const pa=parseFloat(document.getElementById('immo-pa')?.value)||0;
+  const date=document.getElementById('immo-date').value;
+  const amort=parseInt(document.getElementById('immo-amort').value)||0;
+  const etat=document.getElementById('immo-etat').value;
+  if(!des) return notif('Entrez la désignation','error');
+  await sb.from('immobilisations').insert({boutique_id:currentBoutique.id,designation:des,categorie:cat,prix_achat:pa,date_acquisition:date,duree_amortissement:amort,etat});
+  notif('Immobilisation ajoutée ✓','success'); renderImmobilisations();
+}
+
+function editImmo(id,des,cat,pa,date,amort,etat) {
+  const isPdg=currentUser.role==='pdg';
+  const isSuperviseur=currentUser.role==='superviseur';
+  const o=document.createElement('div'); o.className='modal-overlay';
+  o.innerHTML=`<div class="modal"><div class="modal-title">✏️ Modifier l'immobilisation</div>
+    <div class="form-row">
+      <div><label class="inp-label">Désignation</label><input class="inp" id="ei-des" value="${des}"></div>
+      <div><label class="inp-label">Catégorie</label>
+        <select class="inp" id="ei-cat">
+          <option value="mobilier" ${cat==='mobilier'?'selected':''}>Mobilier</option>
+          <option value="materiel" ${cat==='materiel'?'selected':''}>Matériel</option>
+          <option value="vehicule" ${cat==='vehicule'?'selected':''}>Véhicule</option>
+          <option value="informatique" ${cat==='informatique'?'selected':''}>Informatique</option>
+          <option value="batiment" ${cat==='batiment'?'selected':''}>Bâtiment</option>
+          <option value="autre" ${cat==='autre'?'selected':''}>Autre</option>
+        </select>
+      </div>
+      ${isPdg?`<div><label class="inp-label">Prix d'achat 🔒 PDG</label><input class="inp" id="ei-pa" type="number" value="${pa}"></div>`:`<input type="hidden" id="ei-pa" value="${pa}">`}
+      <div><label class="inp-label">Date acquisition</label><input class="inp" id="ei-date" type="date" value="${date}"></div>
+      <div><label class="inp-label">Amortissement (mois)</label><input class="inp" id="ei-amort" type="number" value="${amort}"></div>
+      <div><label class="inp-label">État</label>
+        <select class="inp" id="ei-etat">
+          <option value="bon" ${etat==='bon'?'selected':''}>Bon état</option>
+          <option value="moyen" ${etat==='moyen'?'selected':''}>État moyen</option>
+          <option value="mauvais" ${etat==='mauvais'?'selected':''}>Mauvais état</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove()">Annuler</button>
+      <button class="btn btn-accent" onclick="saveImmo('${id}','${des.replace(/'/g,"\\'")}',${pa},'${etat}')">Enregistrer</button>
+    </div></div>`;
+  document.body.appendChild(o);
+}
+
+async function saveImmo(id,oldDes,oldPa,oldEtat) {
+  const des=document.getElementById('ei-des').value.trim();
+  const cat=document.getElementById('ei-cat').value;
+  const pa=parseFloat(document.getElementById('ei-pa').value)||0;
+  const date=document.getElementById('ei-date').value;
+  const amort=parseInt(document.getElementById('ei-amort').value)||0;
+  const etat=document.getElementById('ei-etat').value;
+  await sb.from('immobilisations').update({designation:des,categorie:cat,prix_achat:pa,date_acquisition:date,duree_amortissement:amort,etat}).eq('id',id);
+  // Log superviseur modifications
+  if(currentUser.role==='superviseur'){
+    const changes=[];
+    if(des!==oldDes) changes.push(`Désignation: "${oldDes}" → "${des}"`);
+    if(etat!==oldEtat) changes.push(`État: "${oldEtat}" → "${etat}"`);
+    if(changes.length>0){
+      await sb.from('notifs_pdg').insert({
+        type:'immo_modifie',
+        boutique_id:currentBoutique?.id||null,
+        boutique_nom:currentBoutique?.nom||'Global',
+        auteur:'Superviseur',
+        message:`Immobilisation modifiée — ${changes.join(' | ')}`,
+        details:JSON.stringify({ancien:{designation:oldDes,etat:oldEtat},nouveau:{designation:des,etat}}),
+        lu:false
+      });
+    }
+  }
+  document.querySelector('.modal-overlay').remove();
+  notif('Immobilisation modifiée ✓','success'); renderImmobilisations();
+}
+
+async function delImmo(id) {
+  if(!confirm('Supprimer cette immobilisation ?')) return;
+  await sb.from('immobilisations').delete().eq('id',id); renderImmobilisations();
+}
+
+// Vue globale immobilisations (PDG + Superviseur)
+async function showImmoGlobal() {
+  currentView='immo_global'; currentBoutique=null;
+  document.getElementById('topbar-title').textContent='Immobilisations — Toutes les boutiques';
+  document.getElementById('topbar-boutique').textContent='Vue globale';
+  document.getElementById('tabs').innerHTML='';
+  renderSidebar();
+  const isSuperviseur=currentUser.role==='superviseur';
+  const isPdg=currentUser.role==='pdg';
+  const rows=await Promise.all(boutiques.map(async b=>{
+    const {data}=await sb.from('immobilisations').select('*').eq('boutique_id',b.id).order('designation');
+    return {b,items:data||[]};
+  }));
+  const totalValeur=rows.reduce((s,{items})=>s+items.reduce((ss,i)=>ss+(i.prix_achat||0),0),0);
+  document.getElementById('content').innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      ${isPdg?`<div class="stat-card" style="flex:1;margin-right:12px"><div class="stat-label">Valeur totale immobilisations</div><div class="stat-value amber">${fmt(totalValeur)} FCFA</div></div>`:''}
+      ${isSuperviseur?`<button class="btn btn-ghost" onclick="showImmoGlobal()">🔄 Actualiser</button>`:''}
+    </div>
+    ${rows.map(({b,items})=>`
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <div style="width:10px;height:10px;border-radius:50%;background:${b.couleur}"></div>
+        <div style="font-size:14px;font-weight:700">${b.nom}</div>
+        <span class="badge badge-accent">${items.length} immobilisation(s)</span>
+        ${isPdg?`<span class="badge badge-amber" style="margin-left:auto">${fmt(items.reduce((s,i)=>s+(i.prix_achat||0),0))} FCFA</span>`:''}
+      </div>
+      ${items.length===0?'<div style="color:var(--text2);font-size:13px">Aucune immobilisation</div>':`
+      <div class="table-wrap"><table>
+        <thead><tr><th>Désignation</th><th>Catégorie</th>${isPdg?'<th>Prix achat</th>':''}<th>Date achat</th><th>État</th><th>Amortissement</th></tr></thead>
+        <tbody>${items.map(im=>{
+          const moisEcoules=Math.floor((Date.now()-new Date(im.date_acquisition).getTime())/(1000*60*60*24*30));
+          const pct=im.duree_amortissement>0?Math.min(100,Math.round((moisEcoules/im.duree_amortissement)*100)):0;
+          return `<tr>
+            <td style="font-weight:600">${im.designation}</td>
+            <td><span class="badge badge-accent">${im.categorie}</span></td>
+            ${isPdg?`<td style="color:var(--amber);font-weight:600">${fmt(im.prix_achat||0)} FCFA</td>`:''}
+            <td style="color:var(--text2)">${im.date_acquisition||'-'}</td>
+            <td><span class="badge ${im.etat==='bon'?'badge-green':im.etat==='moyen'?'badge-amber':'badge-red'}">${im.etat||'bon'}</span></td>
+            <td>
+              <div style="font-size:11px;color:var(--text2)">${pct}%</div>
+              <div style="background:var(--bg3);border-radius:4px;height:5px;width:80px;margin-top:2px">
+                <div style="background:${pct>=100?'var(--red)':pct>60?'var(--amber)':'var(--green)'};height:5px;border-radius:4px;width:${pct}%"></div>
+              </div>
+            </td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table></div>`}
+    </div>`).join('')}`;
+}
+
+// ===================== NOTIFICATIONS PDG =====================
+async function showNotifsPdg() {
+  currentView='notifs_pdg'; currentBoutique=null;
+  document.getElementById('topbar-title').textContent='Notifications de modifications';
+  document.getElementById('topbar-boutique').textContent='Activités des responsables';
+  document.getElementById('tabs').innerHTML='';
+  renderSidebar();
+  const {data}=await sb.from('notifs_pdg').select('*').order('created_at',{ascending:false}).limit(100);
+  // Marquer tout comme lu
+  await sb.from('notifs_pdg').update({lu:true}).eq('lu',false);
+  const notifsBadge=document.getElementById('notifs-pdg-badge');
+  if(notifsBadge){notifsBadge.style.display='none';notifsBadge.textContent='0';}
+  document.getElementById('content').innerHTML=`
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div class="card-title" style="margin-bottom:0">Journal des modifications</div>
+        <button class="btn btn-red btn-sm" onclick="clearAllNotifsPdg()">🗑 Tout effacer</button>
+      </div>
+      ${(data||[]).length===0?'<div class="empty-state"><p>Aucune notification</p></div>':`
+      <div style="display:flex;flex-direction:column;gap:10px">
+        ${(data||[]).map(n=>{
+          let details=null;
+          try{details=JSON.parse(n.details);}catch(e){}
+          const time=new Date(n.created_at).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+          const icon=n.type==='stock_modifie'?'📦':n.type==='employe_modifie'?'👤':'🏗';
+          return `<div style="background:var(--bg3);border:1px solid ${n.lu?'var(--border)':'var(--accent)'};border-radius:10px;padding:14px;position:relative">
+            ${!n.lu?`<div style="position:absolute;top:10px;right:10px;width:8px;height:8px;border-radius:50%;background:var(--accent)"></div>`:''}
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+              <span style="font-size:18px">${icon}</span>
+              <div>
+                <div style="font-weight:700;font-size:13px">${n.message}</div>
+                <div style="font-size:11px;color:var(--text2)">${n.boutique_nom||''} • Par ${n.auteur||'?'} • ${time}</div>
+              </div>
+            </div>
+            ${details?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+              <div style="background:var(--bg2);border:1px solid #f04f5e33;border-radius:8px;padding:10px">
+                <div style="font-size:10px;font-weight:700;color:var(--red);text-transform:uppercase;margin-bottom:6px">AVANT</div>
+                ${Object.entries(details.ancien||{}).map(([k,v])=>`<div style="font-size:12px"><span style="color:var(--text2)">${k}:</span> <span>${v||'-'}</span></div>`).join('')}
+              </div>
+              <div style="background:var(--bg2);border:1px solid #22c97a33;border-radius:8px;padding:10px">
+                <div style="font-size:10px;font-weight:700;color:var(--green);text-transform:uppercase;margin-bottom:6px">APRÈS</div>
+                ${Object.entries(details.nouveau||{}).map(([k,v])=>`<div style="font-size:12px"><span style="color:var(--text2)">${k}:</span> <span style="font-weight:600">${v||'-'}</span></div>`).join('')}
+              </div>
+            </div>`:''}
+          </div>`;
+        }).join('')}
+      </div>`}
+    </div>`;
+}
+
+async function clearAllNotifsPdg() {
+  if(!confirm('Effacer toutes les notifications ?')) return;
+  await sb.from('notifs_pdg').delete().neq('id','00000000-0000-0000-0000-000000000000');
+  notif('Notifications effacées','success'); showNotifsPdg();
+}
+
+// Vue globale employés avec actualisation superviseur
+async function showEmployesGlobalSuperviseur() {
+  return showEmployesGlobal();
+}
+
+
+function openAddBoutique() {
+  const o=document.createElement('div'); o.className='modal-overlay';
+  o.innerHTML=`<div class="modal"><div class="modal-title">Ajouter une boutique</div>
+    <div class="form-row">
+      <div><label class="inp-label">Nom</label><input class="inp" id="nb-nom" placeholder="Ex: Boutique Pointe-Noire"></div>
+      <div><label class="inp-label">Lieu</label><input class="inp" id="nb-lieu" placeholder="Ex: Pointe-Noire"></div>
+      <div><label class="inp-label">Couleur</label>
+        <select class="inp" id="nb-col">
+          <option value="#534AB7">Violet</option><option value="#1D9E75">Vert</option>
+          <option value="#D85A30">Orange</option><option value="#BA7517">Ambre</option>
+          <option value="#185FA5">Bleu</option><option value="#b04fa5">Rose</option>
+        </select>
+      </div>
+      <div><label class="inp-label">Identifiant connexion</label><input class="inp" id="nb-id" placeholder="Ex: boutique6"></div>
+      <div><label class="inp-label">Mot de passe</label><input class="inp" id="nb-pw" placeholder="Ex: pass6"></div>
+    </div>
+    <div style="margin-top:8px;padding-top:12px;border-top:1px solid var(--border)">
+      <div style="font-size:12px;font-weight:700;color:var(--amber);margin-bottom:12px">👁 Créer un compte Superviseur (optionnel)</div>
+      <div class="form-row">
+        <div><label class="inp-label">Identifiant superviseur</label><input class="inp" id="nb-sup-id" placeholder="Ex: superviseur1"></div>
+        <div><label class="inp-label">Mot de passe superviseur</label><input class="inp" id="nb-sup-pw" placeholder="Ex: suppass1"></div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove()">Annuler</button>
+      <button class="btn btn-accent" onclick="saveBoutique()">Créer</button>
+    </div></div>`;
+  document.body.appendChild(o);
+}
+
+async function saveBoutique() {
+  const nom=document.getElementById('nb-nom').value.trim();
+  const lieu=document.getElementById('nb-lieu').value.trim();
+  const couleur=document.getElementById('nb-col').value;
+  const id=document.getElementById('nb-id').value.trim();
+  const pw=document.getElementById('nb-pw').value.trim();
+  const supId=document.getElementById('nb-sup-id')?.value.trim();
+  const supPw=document.getElementById('nb-sup-pw')?.value.trim();
+  if(!nom||!id||!pw) return notif('Remplissez tous les champs','error');
+  const {data,error}=await sb.from('boutiques').insert({nom,lieu,couleur}).select().single();
+  if(error) return notif('Erreur','error');
+  await sb.from('comptes').insert({identifiant:id,mot_de_passe:pw,role:'responsable',boutique_id:data.id});
+  if(supId&&supPw){
+    await sb.from('comptes').insert({identifiant:supId,mot_de_passe:supPw,role:'superviseur',boutique_id:null});
+  }
+  document.querySelector('.modal-overlay').remove();
+  notif('Boutique créée ✓','success'); await loadBoutiques();
+}
+
+function editBoutique(id) {
+  const b=boutiques.find(x=>x.id===id);
+  if(!b) return;
+  const couleur=b.couleur||'#534AB7';
+  const o=document.createElement('div'); o.className='modal-overlay';
+  o.innerHTML=`<div class="modal"><div class="modal-title">✏️ Modifier la boutique</div>
+    <div class="form-row">
+      <div><label class="inp-label">Nom</label><input class="inp" id="eb-nom" value="${(b.nom||'').replace(/"/g,'&quot;')}"></div>
+      <div><label class="inp-label">Lieu</label><input class="inp" id="eb-lieu" value="${(b.lieu||'').replace(/"/g,'&quot;')}"></div>
+      <div><label class="inp-label">Couleur</label>
+        <select class="inp" id="eb-col">
+          <option value="#534AB7" ${couleur==='#534AB7'?'selected':''}>Violet</option>
+          <option value="#1D9E75" ${couleur==='#1D9E75'?'selected':''}>Vert</option>
+          <option value="#D85A30" ${couleur==='#D85A30'?'selected':''}>Orange</option>
+          <option value="#BA7517" ${couleur==='#BA7517'?'selected':''}>Ambre</option>
+          <option value="#185FA5" ${couleur==='#185FA5'?'selected':''}>Bleu</option>
+          <option value="#b04fa5" ${couleur==='#b04fa5'?'selected':''}>Rose</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-bottom:16px">
+      <label class="inp-label">🖼 Photo / Logo (remplace la couleur dans la sidebar)</label>
+      ${b.image_url?`<div style="margin:8px 0"><img src="${b.image_url}" style="width:56px;height:56px;border-radius:8px;object-fit:cover;border:1px solid var(--border)"></div>`:''}
+      <input type="file" id="eb-img" accept="image/*" onchange="previewBoutiqueImg()" style="color:var(--text);font-size:12px;width:100%;margin-bottom:6px">
+      <div id="eb-img-preview"></div>
+      <div style="font-size:11px;color:var(--text2)">Formats JPG, PNG (max 300KB recommandé)</div>
+      ${b.image_url?`<button class="btn btn-red btn-sm" style="margin-top:8px" onclick="removeBootiqueImage('${id}')">✕ Supprimer l'image actuelle</button>`:''}
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-red" onclick="deleteBoutique('${id}')">🗑 Supprimer</button>
+      <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove()">Annuler</button>
+      <button class="btn btn-accent" onclick="saveEditBoutique('${id}')">Enregistrer</button>
+    </div></div>`;
+  document.body.appendChild(o);
+}
+
+function previewBoutiqueImg() {
+  const file=document.getElementById('eb-img')?.files[0];
+  const preview=document.getElementById('eb-img-preview');
+  if(!file||!preview) return;
+  const reader=new FileReader();
+  reader.onload=e=>{preview.innerHTML=`<img src="${e.target.result}" style="width:56px;height:56px;border-radius:8px;object-fit:cover;border:1px solid var(--border);margin-top:6px">`};
+  reader.readAsDataURL(file);
+}
+
+function fileToBase64(file) {
+  return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file);});
+}
+
+async function removeBootiqueImage(id) {
+  await sb.from('boutiques').update({image_url:null}).eq('id',id);
+  document.querySelector('.modal-overlay').remove();
+  notif('Image supprimée ✓','success'); await loadBoutiques();
+}
+
+async function saveEditBoutique(id) {
+  const nom=document.getElementById('eb-nom').value.trim();
+  const lieu=document.getElementById('eb-lieu').value.trim();
+  const couleur=document.getElementById('eb-col').value;
+  if(!nom) return notif('Entrez le nom','error');
+  const imgFile=document.getElementById('eb-img')?.files[0];
+  const updates={nom,lieu,couleur};
+  if(imgFile){
+    if(imgFile.size>1000000) return notif('Image trop grande (max 1MB)','error');
+    updates.image_url=await fileToBase64(imgFile);
+  }
+  const {error}=await sb.from('boutiques').update(updates).eq('id',id);
+  if(error) return notif('Erreur: '+error.message,'error');
+  document.querySelector('.modal-overlay').remove();
+  notif('Boutique modifiée ✓','success'); await loadBoutiques();
+  const b=boutiques.find(x=>x.id===id);
+  if(b&&currentBoutique?.id===id) selectBoutique(b);
+}
+
+async function deleteBoutique(id) {
+  if(!confirm('Supprimer cette boutique et toutes ses données ?')) return;
+  await sb.from('boutiques').delete().eq('id',id);
+  document.querySelector('.modal-overlay').remove();
+  notif('Boutique supprimée','success'); currentBoutique=null; await loadBoutiques();
+}
+
+// ===================== UTILS =====================
+function fmt(n) { return Math.round(n).toLocaleString('fr-FR'); }
+
+function notif(msg,type='success') {
+  const el=document.getElementById('notif');
+  el.textContent=(type==='success'?'✓ ':'✕ ')+msg;
+  el.className='show '+type;
+  clearTimeout(window._notifTimer);
+  window._notifTimer=setTimeout(()=>{el.className='';},4000);
+}
+
+function togglePwVisible() {
+  const inp=document.getElementById('login-pw');
+  const btn=document.getElementById('pw-eye-btn');
+  if(inp.type==='password'){inp.type='text';btn.textContent='🙈';}
+  else{inp.type='password';btn.textContent='👁';}
+}
+
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+
+document.addEventListener('click',e=>{
+  const s=document.getElementById('sidebar'),t=document.getElementById('menu-toggle');
+  if(window.innerWidth<=768&&s.classList.contains('open')&&!s.contains(e.target)&&!t.contains(e.target)) s.classList.remove('open');
+});
+</script>
+</body>
+</html>
