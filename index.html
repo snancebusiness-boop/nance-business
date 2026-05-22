@@ -9,7 +9,7 @@
 <style>
   :root {
     --bg: #0a0c10; --bg2: #111318; --bg3: #1a1d24; --border: #2a2d35;
-    --text: #e8eaf0; --text2: #8b8fa8; --accent: #5b5ef4; --accent2: #7c7ff5; 
+    --text: #e8eaf0; --text2: #8b8fa8; --accent: #5b5ef4; --accent2: #7c7ff5;
     --green: #22c97a; --red: #f04f5e; --amber: #f59e0b; --radius: 12px;
     --font: 'Plus Jakarta Sans', sans-serif;
   }
@@ -222,6 +222,7 @@
     <div class="nav-section">
       <div id="global-btn" class="nav-item" onclick="showGlobal()" style="display:none"><span>🌍</span> Vue globale</div>
       <div id="employes-global-btn" class="nav-item" onclick="showEmployesGlobal()" style="display:none"><span>👥</span> Employés global</div>
+      <div id="presences-global-btn" class="nav-item" onclick="showPresencesGlobal()" style="display:none"><span>🕐</span> Présences global</div>
       <div id="immo-global-btn" class="nav-item" onclick="showImmoGlobal()" style="display:none"><span>🏗</span> Immobilisations</div>
       <div id="chat-btn" class="nav-item" onclick="showChat()"><span>💬</span> Messages <span id="chat-badge" class="notif-badge" style="display:none">0</span></div>
       <div id="notifs-pdg-btn" class="nav-item" onclick="showNotifsPdg()" style="display:none"><span>🔔</span> Notifications <span id="notifs-pdg-badge" class="notif-badge" style="display:none">0</span></div>
@@ -264,12 +265,14 @@ async function doLogin() {
   if (data.role === 'pdg') {
     document.getElementById('global-btn').style.display = 'flex';
     document.getElementById('employes-global-btn').style.display = 'flex';
+    document.getElementById('presences-global-btn').style.display = 'flex';
     document.getElementById('comptes-btn').style.display = 'flex';
     document.getElementById('notifs-pdg-btn').style.display = 'flex';
   }
   if (data.role === 'superviseur') {
     document.getElementById('global-btn').style.display = 'flex';
     document.getElementById('employes-global-btn').style.display = 'flex';
+    document.getElementById('presences-global-btn').style.display = 'flex';
     document.getElementById('immo-global-btn').style.display = 'flex';
   }
   startNotifCheck();
@@ -357,6 +360,7 @@ const TABS = [
   {id:'stocks',label:'📦 Stocks'},
   {id:'immobilisations',label:'🏗 Immobilisations'},
   {id:'employes',label:'👥 Employés'},
+  {id:'presences',label:'🕐 Présences'},
   {id:'besoins',label:'🛒 État de besoin'},
   {id:'calendrier',label:'📆 Calendrier'},
 ];
@@ -369,7 +373,7 @@ function setTab(id) {
 
 function renderContent() {
   if (!currentBoutique) return;
-  const map = {dashboard:renderDashboard,recettes:renderRecettes,historique:renderHistorique,depenses:renderDepenses,stocks:renderStocks,immobilisations:renderImmobilisations,employes:renderEmployes,besoins:renderBesoins,calendrier:renderCalendrier};
+  const map = {dashboard:renderDashboard,recettes:renderRecettes,historique:renderHistorique,depenses:renderDepenses,stocks:renderStocks,immobilisations:renderImmobilisations,employes:renderEmployes,presences:renderPresences,besoins:renderBesoins,calendrier:renderCalendrier};
   if (map[currentTab]) map[currentTab]();
 }
 
@@ -448,6 +452,7 @@ async function addRecette() {
   if(!desc||!mont) return notif('Remplissez tous les champs','error');
   const {error}=await sb.from('recettes').insert({boutique_id:currentBoutique.id,description:desc,montant:mont,mode_paiement:mode,date});
   if(error) return notif('Erreur: '+error.message,'error');
+  await logNotifPdg('recette_ajoutee','💰',`Nouvelle recette : ${fmt(mont)} FCFA — "${desc}"`);
   notif('Recette enregistrée ✓','success'); renderRecettes();
 }
 
@@ -553,6 +558,7 @@ async function addDepense() {
   const date=document.getElementById('dep-date').value;
   if(!desc||!mont) return notif('Remplissez tous les champs','error');
   await sb.from('depenses').insert({boutique_id:currentBoutique.id,description:desc,montant:mont,categorie:cat,date});
+  await logNotifPdg('depense_ajoutee','💸',`Nouvelle dépense : ${fmt(mont)} FCFA — "${desc}" (${cat})`);
   notif('Dépense enregistrée ✓','success'); renderDepenses();
 }
 
@@ -891,19 +897,264 @@ async function addBesoin() {
   const urgence=document.getElementById('bes-urg').value;
   if(!art) return notif("Entrez le nom de l'article",'error');
   await sb.from('besoins').insert({boutique_id:currentBoutique.id,article:art,quantite:qte,unite,urgence});
+  const icone=urgence==='haute'?'🔴':urgence==='moyenne'?'🟡':'🟢';
+  await logNotifPdg('besoin_ajoute','🛒',`Nouveau besoin : "${art}" x${qte} ${unite} — Urgence ${icone} ${urgence}`);
   notif('Besoin ajouté ✓','success'); renderBesoins();
 }
 
 async function recuBesoin(id) {
-  await sb.from('besoins').update({recu:true}).eq('id',id); renderBesoins();
+  const {data:b}=await sb.from('besoins').select('article,quantite,unite').eq('id',id).single();
+  await sb.from('besoins').update({recu:true}).eq('id',id);
+  if(b) await logNotifPdg('besoin_recu','✅',`Besoin marqué reçu : "${b.article}" x${b.quantite} ${b.unite||''}`);
+  renderBesoins();
 }
 
 async function delBesoin(id) {
   if(!confirm('Supprimer ce besoin ?')) return;
-  await sb.from('besoins').delete().eq('id',id); renderBesoins();
+  const {data:b}=await sb.from('besoins').select('article,quantite,unite,urgence').eq('id',id).single();
+  await sb.from('besoins').delete().eq('id',id);
+  if(b) await logNotifPdg('besoin_supprime','🗑',`Besoin supprimé : "${b.article}" x${b.quantite} ${b.unite||''}`);
+  renderBesoins();
 }
 
-// ===================== CALENDRIER =====================
+// ===================== PRÉSENCES =====================
+const STATUTS = {
+  present:  {label:'Présent',   icon:'🟢', color:'var(--green)'},
+  retard:   {label:'En retard', icon:'🟡', color:'var(--amber)'},
+  absent:   {label:'Absent',    icon:'🔴', color:'var(--red)'},
+  conge:    {label:'En congé',  icon:'🔵', color:'#4a9eff'},
+};
+
+async function renderPresences() {
+  const today = new Date().toISOString().split('T')[0];
+  const {data:employes} = await sb.from('employes').select('id,nom,poste').eq('boutique_id',currentBoutique.id).eq('actif',true).order('nom');
+  const {data:presences} = await sb.from('presences').select('*').eq('boutique_id',currentBoutique.id).order('date',{ascending:false}).limit(200);
+
+  // Grouper par date
+  const parDate = {};
+  (presences||[]).forEach(p => {
+    if(!parDate[p.date]) parDate[p.date]=[];
+    parDate[p.date].push(p);
+  });
+
+  const dates = Object.keys(parDate).sort((a,b)=>b.localeCompare(a)).slice(0,30);
+
+  document.getElementById('content').innerHTML=`
+    <div class="card">
+      <div class="card-title">🕐 Enregistrer les présences du jour</div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+        <input class="inp" id="pres-date" type="date" value="${today}" style="width:180px">
+        <button class="btn btn-accent" onclick="ouvrirPointage()">📋 Pointer les employés</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Historique des présences</div>
+      ${dates.length===0?'<div class="empty-state"><p>Aucune présence enregistrée</p></div>':
+      dates.map(date=>{
+        const pres=parDate[date];
+        const stats={present:0,retard:0,absent:0,conge:0};
+        pres.forEach(p=>{ if(stats[p.statut]!==undefined) stats[p.statut]++; });
+        return `
+        <div style="margin-bottom:16px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--border)">
+            <div style="font-weight:700;font-size:14px">${new Date(date+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'})}</div>
+            <span class="badge badge-green">${stats.present} présent(s)</span>
+            ${stats.retard>0?`<span class="badge badge-amber">${stats.retard} retard(s)</span>`:''}
+            ${stats.absent>0?`<span class="badge badge-red">${stats.absent} absent(s)</span>`:''}
+            ${stats.conge>0?`<span class="badge" style="background:#4a9eff22;color:#4a9eff">${stats.conge} congé(s)</span>`:''}
+          </div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Employé</th><th>Statut</th><th>Arrivée</th><th>Départ</th><th>Durée</th><th>Note</th><th>Actions</th></tr></thead>
+            <tbody>${pres.map(p=>{
+              const s=STATUTS[p.statut]||STATUTS.present;
+              let duree='-';
+              if(p.heure_arrivee&&p.heure_depart){
+                const [ah,am]=p.heure_arrivee.split(':').map(Number);
+                const [dh,dm]=p.heure_depart.split(':').map(Number);
+                const mins=(dh*60+dm)-(ah*60+am);
+                if(mins>0) duree=`${Math.floor(mins/60)}h${mins%60>0?String(mins%60).padStart(2,'0'):'00'}`;
+              }
+              return `<tr>
+                <td style="font-weight:600">${p.employe_nom}</td>
+                <td><span style="color:${s.color};font-weight:700">${s.icon} ${s.label}</span></td>
+                <td>${p.heure_arrivee||'-'}</td>
+                <td>${p.heure_depart||'-'}</td>
+                <td style="color:var(--text2)">${duree}</td>
+                <td style="color:var(--text2);font-size:12px">${p.note||''}</td>
+                <td style="display:flex;gap:4px">
+                  <button class="btn btn-amber btn-sm" onclick="editPresence('${p.id}','${p.statut}','${p.heure_arrivee||''}','${p.heure_depart||''}','${(p.note||'').replace(/'/g,"\\'")}')">✏️</button>
+                  <button class="btn btn-red btn-sm" onclick="delPresence('${p.id}')">✕</button>
+                </td>
+              </tr>`;
+            }).join('')}</tbody>
+          </table></div>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+function ouvrirPointage() {
+  const date = document.getElementById('pres-date').value;
+  if(!date) return notif('Choisissez une date','error');
+  sb.from('employes').select('id,nom,poste').eq('boutique_id',currentBoutique.id).eq('actif',true).order('nom').then(({data:employes})=>{
+    if(!employes||employes.length===0) return notif('Aucun employé actif','error');
+    const o=document.createElement('div'); o.className='modal-overlay';
+    o.innerHTML=`<div class="modal" style="max-width:600px;max-height:80vh;overflow-y:auto">
+      <div class="modal-title">📋 Pointage du ${new Date(date+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'2-digit',month:'long'})}</div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+        ${employes.map(e=>`
+        <div style="background:var(--bg3);border-radius:10px;padding:12px" id="row-${e.id}">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <div style="font-weight:700">${e.nom} <span style="color:var(--text2);font-size:12px">${e.poste||''}</span></div>
+            <select class="inp" id="stat-${e.id}" style="width:130px" onchange="toggleHeures('${e.id}')">
+              <option value="present">🟢 Présent</option>
+              <option value="retard">🟡 En retard</option>
+              <option value="absent">🔴 Absent</option>
+              <option value="conge">🔵 En congé</option>
+            </select>
+          </div>
+          <div id="heures-${e.id}" style="display:flex;gap:8px;flex-wrap:wrap">
+            <div><label class="inp-label">Arrivée</label><input class="inp" id="arr-${e.id}" type="time" style="width:120px"></div>
+            <div><label class="inp-label">Départ</label><input class="inp" id="dep-${e.id}" type="time" style="width:120px"></div>
+            <div style="flex:1"><label class="inp-label">Note</label><input class="inp" id="note-${e.id}" placeholder="Optionnel..."></div>
+          </div>
+        </div>`).join('')}
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove()">Annuler</button>
+        <button class="btn btn-accent" onclick="sauverPointage('${date}',${JSON.stringify(employes.map(e=>({id:e.id,nom:e.nom}))).replace(/"/g,'&quot;')})">💾 Enregistrer tout</button>
+      </div>
+    </div>`;
+    document.body.appendChild(o);
+  });
+}
+
+function toggleHeures(empId) {
+  const stat=document.getElementById('stat-'+empId).value;
+  const heures=document.getElementById('heures-'+empId);
+  heures.style.display=(stat==='absent'||stat==='conge')?'none':'flex';
+}
+
+async function sauverPointage(date, employes) {
+  const rows=[];
+  employes.forEach(e=>{
+    const statut=document.getElementById('stat-'+e.id)?.value||'present';
+    const heure_arrivee=document.getElementById('arr-'+e.id)?.value||null;
+    const heure_depart=document.getElementById('dep-'+e.id)?.value||null;
+    const note=document.getElementById('note-'+e.id)?.value||null;
+    rows.push({boutique_id:currentBoutique.id,employe_id:e.id,employe_nom:e.nom,date,statut,heure_arrivee:heure_arrivee||null,heure_depart:heure_depart||null,note:note||null});
+  });
+  // Supprimer les anciennes entrées de ce jour si elles existent
+  await sb.from('presences').delete().eq('boutique_id',currentBoutique.id).eq('date',date);
+  const {error}=await sb.from('presences').insert(rows);
+  if(error) return notif('Erreur: '+error.message,'error');
+  // Résumé pour notif PDG
+  const stats={present:0,retard:0,absent:0,conge:0};
+  rows.forEach(r=>{ if(stats[r.statut]!==undefined) stats[r.statut]++; });
+  await logNotifPdg('presence_enregistree','🕐',
+    `Présences du ${new Date(date+'T12:00:00').toLocaleDateString('fr-FR',{day:'2-digit',month:'long'})} : ${stats.present} présent(s), ${stats.retard} retard(s), ${stats.absent} absent(s), ${stats.conge} congé(s)`
+  );
+  document.querySelector('.modal-overlay').remove();
+  notif('Présences enregistrées ✓','success');
+  renderPresences();
+}
+
+function editPresence(id,statut,arrivee,depart,note) {
+  const o=document.createElement('div'); o.className='modal-overlay';
+  o.innerHTML=`<div class="modal"><div class="modal-title">✏️ Modifier la présence</div>
+    <div class="form-row">
+      <div><label class="inp-label">Statut</label>
+        <select class="inp" id="ep-stat">
+          <option value="present" ${statut==='present'?'selected':''}>🟢 Présent</option>
+          <option value="retard" ${statut==='retard'?'selected':''}>🟡 En retard</option>
+          <option value="absent" ${statut==='absent'?'selected':''}>🔴 Absent</option>
+          <option value="conge" ${statut==='conge'?'selected':''}>🔵 En congé</option>
+        </select>
+      </div>
+      <div><label class="inp-label">Heure d'arrivée</label><input class="inp" id="ep-arr" type="time" value="${arrivee}"></div>
+      <div><label class="inp-label">Heure de départ</label><input class="inp" id="ep-dep" type="time" value="${depart}"></div>
+      <div><label class="inp-label">Note</label><input class="inp" id="ep-note" value="${note}"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove()">Annuler</button>
+      <button class="btn btn-accent" onclick="savePresence('${id}')">Enregistrer</button>
+    </div></div>`;
+  document.body.appendChild(o);
+}
+
+async function savePresence(id) {
+  const statut=document.getElementById('ep-stat').value;
+  const heure_arrivee=document.getElementById('ep-arr').value||null;
+  const heure_depart=document.getElementById('ep-dep').value||null;
+  const note=document.getElementById('ep-note').value||null;
+  await sb.from('presences').update({statut,heure_arrivee,heure_depart,note}).eq('id',id);
+  document.querySelector('.modal-overlay').remove();
+  notif('Présence modifiée ✓','success'); renderPresences();
+}
+
+async function delPresence(id) {
+  if(!confirm('Supprimer cette présence ?')) return;
+  await sb.from('presences').delete().eq('id',id); renderPresences();
+}
+
+// Vue globale présences (PDG + Superviseur)
+async function showPresencesGlobal() {
+  currentView='presences_global'; currentBoutique=null;
+  document.getElementById('topbar-title').textContent='Présences — Toutes les boutiques';
+  document.getElementById('topbar-boutique').textContent='Vue globale';
+  document.getElementById('tabs').innerHTML='';
+  renderSidebar();
+  const today=new Date().toISOString().split('T')[0];
+  const rows=await Promise.all(boutiques.map(async b=>{
+    const {data}=await sb.from('presences').select('*').eq('boutique_id',b.id).eq('date',today).order('employe_nom');
+    return {b,presences:data||[]};
+  }));
+  const isSuperviseur=currentUser.role==='superviseur';
+  document.getElementById('content').innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div style="font-size:15px;font-weight:700">📅 Aujourd'hui — ${new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'})}</div>
+      ${isSuperviseur?`<button class="btn btn-ghost" onclick="showPresencesGlobal()">🔄 Actualiser</button>`:''}
+    </div>
+    ${rows.map(({b,presences})=>{
+      const stats={present:0,retard:0,absent:0,conge:0};
+      presences.forEach(p=>{ if(stats[p.statut]!==undefined) stats[p.statut]++; });
+      return `<div class="card">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+          <div style="width:10px;height:10px;border-radius:50%;background:${b.couleur}"></div>
+          <div style="font-size:14px;font-weight:700">${b.nom}</div>
+          <span class="badge badge-green">🟢 ${stats.present}</span>
+          <span class="badge badge-amber">🟡 ${stats.retard}</span>
+          <span class="badge badge-red">🔴 ${stats.absent}</span>
+          <span class="badge" style="background:#4a9eff22;color:#4a9eff">🔵 ${stats.conge}</span>
+        </div>
+        ${presences.length===0?'<div style="color:var(--text2);font-size:13px">Aucune présence enregistrée aujourd\'hui</div>':`
+        <div class="table-wrap"><table>
+          <thead><tr><th>Employé</th><th>Statut</th><th>Arrivée</th><th>Départ</th><th>Durée</th><th>Note</th></tr></thead>
+          <tbody>${presences.map(p=>{
+            const s=STATUTS[p.statut]||STATUTS.present;
+            let duree='-';
+            if(p.heure_arrivee&&p.heure_depart){
+              const [ah,am]=p.heure_arrivee.split(':').map(Number);
+              const [dh,dm]=p.heure_depart.split(':').map(Number);
+              const mins=(dh*60+dm)-(ah*60+am);
+              if(mins>0) duree=`${Math.floor(mins/60)}h${String(mins%60).padStart(2,'0')}`;
+            }
+            return `<tr>
+              <td style="font-weight:600">${p.employe_nom}</td>
+              <td style="color:${s.color};font-weight:700">${s.icon} ${s.label}</td>
+              <td>${p.heure_arrivee||'-'}</td>
+              <td>${p.heure_depart||'-'}</td>
+              <td style="color:var(--text2)">${duree}</td>
+              <td style="color:var(--text2);font-size:12px">${p.note||''}</td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table></div>`}
+      </div>`;
+    }).join('')}`;
+}
+
+
 let calYear=new Date().getFullYear(), calMonth=new Date().getMonth();
 
 async function renderCalendrier() {
