@@ -380,26 +380,177 @@ function renderContent() {
 // ===================== DASHBOARD =====================
 async function renderDashboard() {
   const today = new Date().toISOString().split('T')[0];
-  const [{data:rec},{data:dep},{data:emp},{data:stk},{data:bes}] = await Promise.all([
-    sb.from('recettes').select('montant').eq('boutique_id',currentBoutique.id).eq('date',today),
-    sb.from('depenses').select('montant').eq('boutique_id',currentBoutique.id).eq('date',today),
-    sb.from('employes').select('id').eq('boutique_id',currentBoutique.id).eq('actif',true),
-    sb.from('stocks').select('quantite,prix_achat,prix_vente').eq('boutique_id',currentBoutique.id),
-    sb.from('besoins').select('id').eq('boutique_id',currentBoutique.id).eq('recu',false),
+  const bid = currentBoutique.id;
+
+  // Générer les 30 derniers jours
+  const days30=[], days7=[];
+  for(let i=29;i>=0;i--){
+    const d=new Date(); d.setDate(d.getDate()-i);
+    days30.push(d.toISOString().split('T')[0]);
+    if(i<7) days7.push(d.toISOString().split('T')[0]);
+  }
+  const dateMin30=days30[0];
+
+  const [{data:rec},{data:dep},{data:emp},{data:stk},{data:bes},{data:pres},{data:recHist},{data:depHist}] = await Promise.all([
+    sb.from('recettes').select('montant').eq('boutique_id',bid).eq('date',today),
+    sb.from('depenses').select('montant').eq('boutique_id',bid).eq('date',today),
+    sb.from('employes').select('id').eq('boutique_id',bid).eq('actif',true),
+    sb.from('stocks').select('produit,quantite,prix_achat,prix_vente').eq('boutique_id',bid),
+    sb.from('besoins').select('id,urgence').eq('boutique_id',bid).eq('recu',false),
+    sb.from('presences').select('statut').eq('boutique_id',bid).eq('date',today),
+    sb.from('recettes').select('montant,date').eq('boutique_id',bid).gte('date',dateMin30),
+    sb.from('depenses').select('montant,date').eq('boutique_id',bid).gte('date',dateMin30),
   ]);
+
   const totalRec=(rec||[]).reduce((s,r)=>s+parseFloat(r.montant),0);
   const totalDep=(dep||[]).reduce((s,d)=>s+parseFloat(d.montant),0);
-  const valStock=(stk||[]).reduce((s,p)=>s+p.quantite*parseFloat(p.prix_achat),0);
+  const valStock=(stk||[]).reduce((s,p)=>s+p.quantite*parseFloat(p.prix_achat||0),0);
+  const solde=totalRec-totalDep;
+  const besUrgent=(bes||[]).filter(b=>b.urgence==='haute').length;
+  const presAujourdhui={present:0,retard:0,absent:0,conge:0};
+  (pres||[]).forEach(p=>{ if(presAujourdhui[p.statut]!==undefined) presAujourdhui[p.statut]++; });
+
+  // Données graphiques par jour
+  const recParJour={}, depParJour={};
+  days30.forEach(d=>{ recParJour[d]=0; depParJour[d]=0; });
+  (recHist||[]).forEach(r=>{ if(recParJour[r.date]!==undefined) recParJour[r.date]+=parseFloat(r.montant); });
+  (depHist||[]).forEach(d=>{ if(depParJour[d.date]!==undefined) depParJour[d.date]+=parseFloat(d.montant); });
+
+  // Période sélectionnée (par défaut 7j)
+  const labels7=days7.map(d=>new Date(d+'T12:00:00').toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'}));
+  const labels30=days30.map(d=>new Date(d+'T12:00:00').toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'}));
+
   document.getElementById('content').innerHTML = `
+    <!-- STATS RAPIDES -->
     <div class="stats-grid">
-      <div class="stat-card"><div class="stat-label">Recette du jour</div><div class="stat-value green">${fmt(totalRec)}</div><div class="stat-sub">FCFA encaissés</div></div>
-      <div class="stat-card"><div class="stat-label">Dépenses du jour</div><div class="stat-value red">${fmt(totalDep)}</div><div class="stat-sub">FCFA dépensés</div></div>
-      <div class="stat-card"><div class="stat-label">Solde du jour</div><div class="stat-value ${totalRec-totalDep>=0?'green':'red'}">${fmt(totalRec-totalDep)}</div><div class="stat-sub">FCFA</div></div>
-      <div class="stat-card"><div class="stat-label">Employés actifs</div><div class="stat-value accent">${(emp||[]).length}</div><div class="stat-sub">personnes</div></div>
-      <div class="stat-card"><div class="stat-label">Valeur du stock</div><div class="stat-value amber">${fmt(valStock)}</div><div class="stat-sub">FCFA (prix achat)</div></div>
-      <div class="stat-card"><div class="stat-label">Besoins en attente</div><div class="stat-value ${(bes||[]).length>0?'red':'green'}">${(bes||[]).length}</div><div class="stat-sub">articles à commander</div></div>
+      <div class="stat-card"><div class="stat-label">💰 Recette du jour</div><div class="stat-value green">${fmt(totalRec)}</div><div class="stat-sub">FCFA encaissés</div></div>
+      <div class="stat-card"><div class="stat-label">💸 Dépenses du jour</div><div class="stat-value red">${fmt(totalDep)}</div><div class="stat-sub">FCFA dépensés</div></div>
+      <div class="stat-card"><div class="stat-label">📊 Solde du jour</div><div class="stat-value ${solde>=0?'green':'red'}">${fmt(solde)}</div><div class="stat-sub">FCFA</div></div>
+      <div class="stat-card"><div class="stat-label">👥 Présences</div><div class="stat-value accent">${presAujourdhui.present+presAujourdhui.retard}</div><div class="stat-sub">${presAujourdhui.absent} absent(s) · ${presAujourdhui.conge} congé(s)</div></div>
+      <div class="stat-card"><div class="stat-label">📦 Valeur stock</div><div class="stat-value amber">${fmt(valStock)}</div><div class="stat-sub">FCFA (prix achat)</div></div>
+      <div class="stat-card"><div class="stat-label">🛒 Besoins urgents</div><div class="stat-value ${besUrgent>0?'red':'green'}">${besUrgent}</div><div class="stat-sub">${(bes||[]).length} total en attente</div></div>
+    </div>
+
+    <!-- GRAPHIQUE RECETTES VS DÉPENSES -->
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+        <div class="card-title" style="margin-bottom:0">📈 Recettes vs Dépenses</div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-ghost btn-sm active-period" id="btn7j" onclick="switchPeriod(7)" style="background:var(--accent);color:#fff">7 jours</button>
+          <button class="btn btn-ghost btn-sm" id="btn30j" onclick="switchPeriod(30)">30 jours</button>
+        </div>
+      </div>
+      <canvas id="chart-recettes" height="80"></canvas>
+    </div>
+
+    <!-- GRAPHIQUE STOCKS + PRÉSENCES -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="card">
+        <div class="card-title">📦 Top stocks (quantité)</div>
+        <canvas id="chart-stocks" height="160"></canvas>
+      </div>
+      <div class="card">
+        <div class="card-title">🕐 Présences — 7 derniers jours</div>
+        <canvas id="chart-presences" height="160"></canvas>
+      </div>
     </div>`;
+
+  // Charger Chart.js et dessiner
+  if(!window.Chart){
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
+    s.onload=()=>drawCharts(days7,days30,labels7,labels30,recParJour,depParJour,stk||[],bid);
+    document.head.appendChild(s);
+  } else {
+    drawCharts(days7,days30,labels7,labels30,recParJour,depParJour,stk||[],bid);
+  }
 }
+
+let chartRec=null, chartStk=null, chartPres=null;
+let _days7,_days30,_labels7,_labels30,_recParJour,_depParJour,_stk,_bid;
+
+function drawCharts(days7,days30,labels7,labels30,recParJour,depParJour,stk,bid){
+  _days7=days7;_days30=days30;_labels7=labels7;_labels30=labels30;
+  _recParJour=recParJour;_depParJour=depParJour;_stk=stk;_bid=bid;
+
+  // Graphique recettes vs dépenses (7j par défaut)
+  drawRecChart(7);
+
+  // Graphique stocks top 8
+  const top8=stk.sort((a,b)=>b.quantite-a.quantite).slice(0,8);
+  const ctxS=document.getElementById('chart-stocks');
+  if(ctxS){
+    if(chartStk) chartStk.destroy();
+    chartStk=new Chart(ctxS,{
+      type:'bar',
+      data:{
+        labels:top8.map(p=>p.produit.length>12?p.produit.substring(0,12)+'…':p.produit),
+        datasets:[{
+          label:'Quantité',
+          data:top8.map(p=>p.quantite),
+          backgroundColor:'rgba(83,74,183,0.7)',
+          borderRadius:6,
+        }]
+      },
+      options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#8b8fa8'}},x:{grid:{display:false},ticks:{color:'#8b8fa8'}}}}
+    });
+  }
+
+  // Graphique présences 7 derniers jours
+  drawPresChart(bid,days7,labels7);
+}
+
+function drawRecChart(period){
+  const days=period===7?_days7:_days30;
+  const labels=period===7?_labels7:_labels30;
+  const ctxR=document.getElementById('chart-recettes');
+  if(!ctxR) return;
+  if(chartRec) chartRec.destroy();
+  chartRec=new Chart(ctxR,{
+    type:'line',
+    data:{
+      labels,
+      datasets:[
+        {label:'Recettes',data:days.map(d=>_recParJour[d]||0),borderColor:'#22c97a',backgroundColor:'rgba(34,201,122,0.1)',tension:0.4,fill:true,pointBackgroundColor:'#22c97a',pointRadius:4},
+        {label:'Dépenses',data:days.map(d=>_depParJour[d]||0),borderColor:'#f04f5e',backgroundColor:'rgba(240,79,94,0.1)',tension:0.4,fill:true,pointBackgroundColor:'#f04f5e',pointRadius:4},
+      ]
+    },
+    options:{responsive:true,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{color:'#e8eaf0'}}},scales:{y:{beginAtZero:true,grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#8b8fa8',callback:v=>fmt(v)}},x:{grid:{display:false},ticks:{color:'#8b8fa8'}}}}
+  });
+  // Mettre à jour les boutons
+  const btn7=document.getElementById('btn7j');
+  const btn30=document.getElementById('btn30j');
+  if(btn7&&btn30){
+    if(period===7){ btn7.style.background='var(--accent)'; btn7.style.color='#fff'; btn30.style.background=''; btn30.style.color=''; }
+    else { btn30.style.background='var(--accent)'; btn30.style.color='#fff'; btn7.style.background=''; btn7.style.color=''; }
+  }
+}
+
+function switchPeriod(p){ drawRecChart(p); }
+
+async function drawPresChart(bid,days7,labels7){
+  const {data}=await sb.from('presences').select('date,statut').eq('boutique_id',bid).gte('date',days7[0]);
+  const parJour={};
+  days7.forEach(d=>{ parJour[d]={present:0,retard:0,absent:0,conge:0}; });
+  (data||[]).forEach(p=>{ if(parJour[p.date]&&parJour[p.date][p.statut]!==undefined) parJour[p.date][p.statut]++; });
+  const ctxP=document.getElementById('chart-presences');
+  if(!ctxP) return;
+  if(chartPres) chartPres.destroy();
+  chartPres=new Chart(ctxP,{
+    type:'bar',
+    data:{
+      labels:labels7,
+      datasets:[
+        {label:'Présent',data:days7.map(d=>parJour[d].present),backgroundColor:'rgba(34,201,122,0.8)',borderRadius:4},
+        {label:'Retard',data:days7.map(d=>parJour[d].retard),backgroundColor:'rgba(245,158,11,0.8)',borderRadius:4},
+        {label:'Absent',data:days7.map(d=>parJour[d].absent),backgroundColor:'rgba(240,79,94,0.8)',borderRadius:4},
+        {label:'Congé',data:days7.map(d=>parJour[d].conge),backgroundColor:'rgba(74,158,255,0.8)',borderRadius:4},
+      ]
+    },
+    options:{responsive:true,plugins:{legend:{labels:{color:'#e8eaf0',boxWidth:12}}},scales:{x:{stacked:true,grid:{display:false},ticks:{color:'#8b8fa8'}},y:{stacked:true,beginAtZero:true,grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#8b8fa8'}}}}
+  });
+}
+
 
 // ===================== RECETTES =====================
 async function renderRecettes() {
@@ -1345,7 +1496,73 @@ async function loadGlobalData() {
         </tr>
         </tbody>
       </table></div>
+    </div>
+    <!-- GRAPHIQUE COMPARATIF 30J -->
+    <div class="card">
+      <div class="card-title">📈 Évolution recettes — 30 derniers jours (toutes boutiques)</div>
+      <canvas id="chart-global-comp" height="70"></canvas>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="card">
+        <div class="card-title">🏆 Recettes du jour par boutique</div>
+        <canvas id="chart-global-bar" height="160"></canvas>
+      </div>
+      <div class="card">
+        <div class="card-title">📊 Solde mensuel par boutique</div>
+        <canvas id="chart-global-solde" height="160"></canvas>
+      </div>
     </div>`;
+
+  // Données 30j pour graphique comparatif
+  const days30g=[];
+  for(let i=29;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i); days30g.push(d.toISOString().split('T')[0]); }
+  const labels30g=days30g.map(d=>new Date(d+'T12:00:00').toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'}));
+
+  const recParBoutiqueJour=await Promise.all(boutiques.map(async b=>{
+    const {data}=await sb.from('recettes').select('montant,date').eq('boutique_id',b.id).gte('date',days30g[0]);
+    const parJour={};
+    days30g.forEach(d=>parJour[d]=0);
+    (data||[]).forEach(r=>{ if(parJour[r.date]!==undefined) parJour[r.date]+=parseFloat(r.montant); });
+    return {b,parJour};
+  }));
+
+  const drawG=()=>{
+    // Graphique ligne comparatif
+    const ctx1=document.getElementById('chart-global-comp');
+    if(ctx1) new Chart(ctx1,{
+      type:'line',
+      data:{labels:labels30g,datasets:recParBoutiqueJour.map(({b,parJour})=>({
+        label:b.nom, data:days30g.map(d=>parJour[d]||0),
+        borderColor:b.couleur, backgroundColor:b.couleur+'22',
+        tension:0.4, fill:false, pointRadius:2,
+      }))},
+      options:{responsive:true,plugins:{legend:{labels:{color:'#e8eaf0',boxWidth:10,font:{size:10}}}},scales:{y:{beginAtZero:true,grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#8b8fa8',callback:v=>fmt(v)}},x:{grid:{display:false},ticks:{color:'#8b8fa8',maxTicksLimit:8}}}}
+    });
+    // Bar chart recettes du jour
+    const ctx2=document.getElementById('chart-global-bar');
+    if(ctx2) new Chart(ctx2,{
+      type:'bar',
+      data:{labels:rows.map(r=>r.b.nom.length>10?r.b.nom.substring(0,10)+'…':r.b.nom),
+        datasets:[
+          {label:'Recettes',data:rows.map(r=>r.r),backgroundColor:rows.map(r=>r.b.couleur+'bb'),borderRadius:6},
+          {label:'Dépenses',data:rows.map(r=>r.d),backgroundColor:'rgba(240,79,94,0.6)',borderRadius:6},
+        ]},
+      options:{responsive:true,plugins:{legend:{labels:{color:'#e8eaf0'}}},scales:{y:{beginAtZero:true,grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#8b8fa8',callback:v=>fmt(v)}},x:{grid:{display:false},ticks:{color:'#8b8fa8'}}}}
+    });
+    // Bar chart solde mensuel
+    const ctx3=document.getElementById('chart-global-solde');
+    if(ctx3) new Chart(ctx3,{
+      type:'bar',
+      data:{labels:moisRows.map(r=>r.b.nom.length>10?r.b.nom.substring(0,10)+'…':r.b.nom),
+        datasets:[{label:'Solde mensuel',data:moisRows.map(r=>r.r-r.d),backgroundColor:moisRows.map(r=>r.r-r.d>=0?r.b.couleur+'bb':'rgba(240,79,94,0.7)'),borderRadius:6}]},
+      options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:false,grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#8b8fa8',callback:v=>fmt(v)}},x:{grid:{display:false},ticks:{color:'#8b8fa8'}}}}
+    });
+  };
+  if(!window.Chart){
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
+    s.onload=drawG; document.head.appendChild(s);
+  } else { drawG(); }
 }
 
 // Canal fixe pour la conversation PDG ↔ Superviseur
