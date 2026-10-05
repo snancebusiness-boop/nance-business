@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Nance Group — Espace de gestion</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#1A1A1E">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/svg+xml" href="assets/icone-app.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=1">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<button id="menu-toggle" onclick="toggleSidebar()">☰</button>
+<div id="notif"></div>
+
+<div id="app">
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <img class="logo-sidebar logo-pour-sombre" src="assets/logo-horizontal-fond-sombre.svg" alt="Nance Group">
+      <img class="logo-sidebar logo-pour-clair" src="assets/logo-horizontal-transparent.svg" alt="Nance Group">
+    </div>
+    <div class="user-badge">
+      <div class="dot" id="user-status-dot" style="background:var(--green)"></div>
+      <div>
+        <strong id="user-label">PDG</strong>
+        <br><span id="user-role-label">Accès total</span>
+      </div>
+    </div>
+    <!-- Utilisateurs en ligne -->
+    <div id="online-users" style="margin:8px 12px;padding:8px 10px;background:var(--bg3);border-radius:8px;display:none">
+      <div style="font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;margin-bottom:6px">🟢 En ligne</div>
+      <div id="online-list" style="display:flex;flex-direction:column;gap:4px"></div>
+    </div>
+    <div class="section-label">Boutiques</div>
+    <div id="boutiques-list"></div>
+    <div id="add-boutique-wrap"></div>
+    <div class="nav-section">
+
+      <!-- GROUPE : VUES GLOBALES (PDG/Superviseur) -->
+      <div class="nav-group" id="grp-global" style="display:none">
+        <div class="nav-group-header" onclick="toggleNavGroup('global')">
+          <span>🌍 Vues globales</span><span id="grp-global-arrow">▾</span>
+        </div>
+        <div class="nav-group-body" id="grp-global-body">
+          <div id="global-btn" class="nav-item nav-sub" onclick="showGlobal()" style="display:none"><span>🌍</span> Vue globale</div>
+          <div id="annuel-btn" class="nav-item nav-sub" onclick="showTableauBordAnnuel()" style="display:none"><span>📅</span> Bilan annuel</div>
+          <div id="employes-global-btn" class="nav-item nav-sub" onclick="showEmployesGlobal()" style="display:none"><span>👥</span> Employés global</div>
+          <div id="presences-global-btn" class="nav-item nav-sub" onclick="showPresencesGlobal()" style="display:none"><span>🕐</span> Présences global</div>
+          <div id="immo-global-btn" class="nav-item nav-sub" onclick="showImmoGlobal()" style="display:none"><span>🏗</span> Immobilisations</div>
+          <div id="fil-btn" class="nav-item nav-sub" onclick="showFilActualite()" style="display:none"><span>📰</span> Fil d'actualité</div>
+        </div>
+      </div>
+
+      <!-- GROUPE : FINANCES -->
+      <div class="nav-group" id="grp-finance" style="display:none">
+        <div class="nav-group-header" onclick="toggleNavGroup('finance')">
+          <span>💰 Finances</span><span id="grp-finance-arrow">▾</span>
+        </div>
+        <div class="nav-group-body" id="grp-finance-body">
+          <div id="paie-btn" class="nav-item nav-sub" onclick="showRapportPaie()" style="display:none"><span>💵</span> Rapport de paie</div>
+          <div id="meilleur-btn" class="nav-item nav-sub" onclick="showMeilleurEmploye()" style="display:none"><span>🏆</span> Meilleur employé</div>
+          <div id="dettes-btn" class="nav-item nav-sub" onclick="showAnalyseDettes()" style="display:none"><span>⚠️</span> Analyse des dettes</div>
+          <div id="rapport-transport-btn" class="nav-item nav-sub" onclick="showRapportTransport()" style="display:none"><span>🚌</span> Rapport transport</div>
+          <div id="objectifs-btn" class="nav-item nav-sub" onclick="showObjectifs()" style="display:none"><span>🎯</span> Objectifs</div>
+          <div id="logprix-btn" class="nav-item nav-sub" onclick="showLogPrix()" style="display:none"><span>💹</span> Log des prix</div>
+          <div id="sauvegarde-btn" class="nav-item nav-sub" onclick="showSauvegarde()" style="display:none"><span>💾</span> Sauvegarde auto</div>
+        </div>
+      </div>
+
+      <!-- GROUPE : COMMUNICATION -->
+      <div class="nav-group">
+        <div class="nav-group-header" onclick="toggleNavGroup('comm')">
+          <span>💬 Communication</span><span id="grp-comm-arrow">▾</span>
+        </div>
+        <div class="nav-group-body" id="grp-comm-body">
+          <div id="chat-btn" class="nav-item nav-sub" onclick="showChat()"><span>💬</span> Messages <span id="chat-badge" class="notif-badge" style="display:none">0</span></div>
+          <div id="annonces-btn" class="nav-item nav-sub" onclick="showAnnonces()"><span>📢</span> Annonces <span id="annonces-badge" class="notif-badge" style="display:none">0</span></div>
+          <div id="sondages-btn" class="nav-item nav-sub" onclick="showSondages()"><span>📊</span> Sondages <span id="sondages-badge" class="notif-badge" style="display:none">0</span></div>
+        </div>
+      </div>
+
+      <!-- GROUPE : OUTILS -->
+      <div class="nav-group">
+        <div class="nav-group-header" onclick="toggleNavGroup('outils')">
+          <span>🔧 Outils</span><span id="grp-outils-arrow">▾</span>
+        </div>
+        <div class="nav-group-body" id="grp-outils-body">
+          <div id="search-btn" class="nav-item nav-sub" onclick="showRecherche()"><span>🔍</span> Recherche</div>
+          <div id="pdf-btn" class="nav-item nav-sub" onclick="showExportPdf()"><span>📄</span> Export PDF</div>
+          <div id="rappels-btn" class="nav-item nav-sub" onclick="showRappels()" style="display:none"><span>⏰</span> Rappels <span id="rappels-badge" class="notif-badge" style="display:none">0</span></div>
+          <div id="organi-btn" class="nav-item nav-sub" onclick="showOrganigramme()"><span>🏢</span> Organigramme</div>
+          <div id="docs-btn" class="nav-item nav-sub" onclick="showDocuments()"><span>📁</span> Documents</div>
+        </div>
+      </div>
+
+      <!-- GROUPE : ADMINISTRATION (PDG) -->
+      <div class="nav-group" id="grp-admin" style="display:none">
+        <div class="nav-group-header" onclick="toggleNavGroup('admin')">
+          <span>⚙️ Administration</span><span id="grp-admin-arrow">▾</span>
+        </div>
+        <div class="nav-group-body" id="grp-admin-body">
+          <div id="notifs-pdg-btn" class="nav-item nav-sub" onclick="showNotifsPdg()" style="display:none"><span>🔔</span> Notifications <span id="notifs-pdg-badge" class="notif-badge" style="display:none">0</span></div>
+          <div id="connexions-btn" class="nav-item nav-sub" onclick="showConnexions()" style="display:none"><span>🔐</span> Connexions</div>
+          <div id="corbeille-btn" class="nav-item nav-sub" onclick="showCorbeille()" style="display:none"><span>🗑</span> Corbeille <span id="corbeille-badge" class="notif-badge" style="display:none">0</span></div>
+          <div id="comptes-btn" class="nav-item nav-sub" onclick="showComptes()" style="display:none"><span>🔑</span> Comptes</div>
+        </div>
+      </div>
+
+      <!-- TOUJOURS VISIBLE -->
+      <div class="nav-item" onclick="showMonProfil()"><span>👤</span> Mon profil</div>
+      <div id="conges-btn" class="nav-item" onclick="showConges()" style="display:none"><span>🏖</span> Congés</div>
+      <div id="parametres-btn" class="nav-item" onclick="showParametresApp()" style="display:none"><span>⚙️</span> Paramètres app</div>
+      <div class="nav-item logout-btn" onclick="doLogout()"><span>→</span> Déconnexion</div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title" id="topbar-title">Tableau de bord</div>
+        <div class="topbar-boutique" id="topbar-boutique"></div>
+      </div>
+      <button onclick="toggleTheme()" id="theme-btn" title="Changer le thème" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px 12px;cursor:pointer;font-size:16px;color:var(--text);transition:all 0.2s">🌙</button>
+    </div>
+    <div class="tabs" id="tabs"></div>
+    <div class="content" id="content"></div>
+  </div>
+</div>
+
+<!-- Socle -->
+<script src="js/config.js?v=1"></script>
+<script src="js/core.js?v=1"></script>
+<script src="js/api.js?v=1"></script>
+<script src="js/navigation.js?v=1"></script>
+<script src="js/auth.js?v=1"></script>
+<!-- Modules -->
+<script src="js/modules/tableau-de-bord.js?v=1"></script>
+<script src="js/modules/caisse.js?v=1"></script>
+<script src="js/modules/stocks.js?v=1"></script>
+<script src="js/modules/employes.js?v=1"></script>
+<script src="js/modules/presences.js?v=1"></script>
+<script src="js/modules/vue-globale.js?v=1"></script>
+<script src="js/modules/messages.js?v=1"></script>
+<script src="js/modules/notifications.js?v=1"></script>
+<script src="js/modules/comptes.js?v=1"></script>
+<script src="js/modules/immobilisations.js?v=1"></script>
+<script src="js/modules/outils.js?v=1"></script>
+<script src="js/modules/sauvegarde.js?v=1"></script>
+<script src="js/modules/communication.js?v=1"></script>
+<script src="js/modules/fournisseurs.js?v=1"></script>
+<script src="js/modules/corbeille.js?v=1"></script>
+<script src="js/modules/transport.js?v=1"></script>
+<script src="js/modules/parametres.js?v=1"></script>
+<script src="js/modules/factures.js?v=1"></script>
+<script src="js/modules/boutiques.js?v=1"></script>
+<script src="pwa.js?v=1"></script>
+</body>
+</html>

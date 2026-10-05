@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Connexion — Nance Group</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#1A1A1E">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/svg+xml" href="assets/icone-app.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=1">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div id="notif"></div>
+<main class="page-centree">
+  <form class="login-box" id="form-connexion" style="animation:fadeInUp 0.5s ease" novalidate>
+    <div class="login-logo">
+      <img class="logo-connexion" src="assets/logo-horizontal-fond-sombre.svg" alt="Nance Group">
+      <p>Gestion multi-boutiques · République du Congo</p>
+    </div>
+
+    <div class="form-group">
+      <label for="login-id">Identifiant</label>
+      <input type="text" id="login-id" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Ex : pdg" required>
+    </div>
+    <div class="form-group">
+      <label for="login-pw">Mot de passe</label>
+      <div style="position:relative">
+        <input type="password" id="login-pw" autocomplete="current-password" placeholder="••••••••" style="padding-right:42px" required>
+        <button type="button" id="pw-eye-btn" aria-label="Afficher le mot de passe"
+          style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text2);font-size:17px;line-height:1;padding:0">👁</button>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="login-btn" type="submit">Se connecter</button>
+
+    <div style="display:flex;align-items:center;gap:8px;margin-top:14px;justify-content:center">
+      <input type="checkbox" id="remember-me" checked style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer">
+      <label for="remember-me" style="font-size:12px;color:var(--text2);cursor:pointer">Rester connecté sur cet appareil</label>
+    </div>
+    <div class="login-error" id="login-error" role="alert"></div>
+
+    <div class="login-sep"></div>
+    <div class="forgot-link" id="lien-oubli" style="text-decoration:none">Mot de passe oublié ?</div>
+    <div id="aide-oubli" style="display:none;font-size:12px;color:var(--text2);text-align:center;margin-top:8px;line-height:1.6">
+      Demandez au PDG de vous définir un nouveau mot de passe<br>(menu Administration → Comptes).
+    </div>
+    <div class="login-pied">Connexion sécurisée · © Nance Group</div>
+  </form>
+</main>
+
+<script src="js/config.js?v=1"></script>
+<script>
+(async function () {
+  // Déjà connecté ? On entre directement.
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) return location.replace('app.html');
+
+  const err = document.getElementById('login-error');
+  const montrerErreur = (m) => { err.textContent = m; err.style.display = 'block'; };
+  if (new URLSearchParams(location.search).get('erreur') === 'compte')
+    montrerErreur("Ce compte n'est relié à aucun profil Nance Group. Contactez le PDG.");
+
+  document.getElementById('pw-eye-btn').onclick = function () {
+    const i = document.getElementById('login-pw');
+    i.type = i.type === 'password' ? 'text' : 'password';
+    this.textContent = i.type === 'password' ? '👁' : '🙈';
+  };
+  document.getElementById('lien-oubli').onclick = () => {
+    const a = document.getElementById('aide-oubli');
+    a.style.display = a.style.display === 'none' ? 'block' : 'none';
+  };
+
+  document.getElementById('form-connexion').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    err.style.display = 'none';
+    const id = document.getElementById('login-id').value.trim();
+    const pw = document.getElementById('login-pw').value;
+    if (!id || !pw) return montrerErreur('Entrez votre identifiant et votre mot de passe.');
+
+    const btn = document.getElementById('login-btn');
+    btn.disabled = true; btn.textContent = 'Connexion…';
+
+    // "Rester connecté" décide où la session est gardée
+    const garder = document.getElementById('remember-me').checked;
+    localStorage.setItem('nance_remember', garder ? '1' : '0');
+    const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: { storage: garder ? localStorage : sessionStorage, storageKey: 'nance-auth', persistSession: true, autoRefreshToken: false }
+    });
+
+    const { error } = await client.auth.signInWithPassword({ email: identifiantVersEmail(id), password: pw });
+    if (error) {
+      btn.disabled = false; btn.textContent = 'Se connecter';
+      const m = (error.message || '').toLowerCase();
+      if (m.includes('invalid')) return montrerErreur('Identifiant ou mot de passe incorrect.');
+      if (m.includes('fetch') || m.includes('network')) return montrerErreur('Pas de connexion internet.');
+      return montrerErreur('Connexion impossible : ' + error.message);
+    }
+    sessionStorage.removeItem('nance_pin_ok');
+    location.replace('app.html');
+  });
+})();
+</script>
+</body>
+</html>
